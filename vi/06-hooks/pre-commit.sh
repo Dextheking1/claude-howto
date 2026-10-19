@@ -10,7 +10,7 @@
 
 # Đọc JSON của hook từ stdin; chỉ chạy test với lệnh git commit
 INPUT=$(cat)
-COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+COMMAND=$(echo "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)
 if ! echo "$COMMAND" | grep -q 'git commit'; then
   exit 0
 fi
