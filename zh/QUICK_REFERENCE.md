@@ -46,7 +46,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### MCP
 ```bash
 # 设置凭据
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # 安装配置（项目级）
@@ -356,7 +356,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### 第 4-5 天
 ```bash
 # 设置 MCP
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 cp 05-mcp/github-mcp.json .mcp.json
 
 # 试用 MCP 命令
@@ -434,7 +434,7 @@ ls -la .claude/agents/
 head -20 .claude/agents/code-reviewer.md
 
 # 测试 MCP 连接
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ---

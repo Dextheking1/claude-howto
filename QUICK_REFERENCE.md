@@ -46,7 +46,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### MCP
 ```bash
 # Set credentials
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # Install config (project scope)
@@ -358,7 +358,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### Day 4-5
 ```bash
 # Set up MCP
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 cp 05-mcp/github-mcp.json .mcp.json
 
 # Try MCP commands
@@ -449,7 +449,7 @@ ls -la .claude/agents/
 head -20 .claude/agents/code-reviewer.md
 
 # Test MCP connection
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ---

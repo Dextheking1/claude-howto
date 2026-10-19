@@ -586,6 +586,7 @@ ORDER BY order_count DESC;
 
 **Setup**:
 ```bash
+export DATABASE_URL="postgresql://user:pass@localhost/mydb"
 claude mcp add --transport stdio database -- npx -y @bytebase/dbhub \
   --dsn "$DATABASE_URL"
 ```

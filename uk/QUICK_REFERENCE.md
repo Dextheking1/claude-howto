@@ -55,7 +55,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 
 ```bash
 # Встановити облікові дані
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # Встановити конфігурацію (рівень проекту)
@@ -386,7 +386,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 
 ```bash
 # Налаштувати MCP
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 cp 05-mcp/github-mcp.json .mcp.json
 
 # Спробувати MCP-команди
@@ -468,7 +468,7 @@ ls -la .claude/agents/
 head -20 .claude/agents/code-reviewer.md
 
 # Перевірити MCP-з'єднання
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ---

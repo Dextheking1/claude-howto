@@ -46,7 +46,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### MCP
 ```bash
 # Thiết lập thông tin xác thực
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # Cài đặt cấu hình (phạm vi dự án)
@@ -356,7 +356,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### Ngày 4-5
 ```bash
 # Thiết lập MCP
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 cp 05-mcp/github-mcp.json .mcp.json
 
 # Thử lệnh MCP
@@ -434,7 +434,7 @@ ls -la .claude/agents/
 head -20 .claude/agents/code-reviewer.md
 
 # Kiểm tra kết nối MCP
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ---

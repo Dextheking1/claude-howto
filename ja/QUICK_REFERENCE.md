@@ -50,7 +50,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### MCP
 ```bash
 # 認証情報を設定
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # 設定をインストール (プロジェクトスコープ)
@@ -360,7 +360,7 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 ### 4〜5 日目
 ```bash
 # MCP をセットアップ
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 cp 05-mcp/github-mcp.json .mcp.json
 
 # MCP コマンドを試す
@@ -437,7 +437,7 @@ ls -la .claude/agents/
 head -20 .claude/agents/code-reviewer.md
 
 # MCP 接続をテスト
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 ```
 
 ---
