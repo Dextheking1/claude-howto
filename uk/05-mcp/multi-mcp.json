@@ -14,7 +14,7 @@
         "-y",
         "@bytebase/dbhub",
         "--dsn",
-        "postgresql://readonly:pass@prod.db.com:5432/analytics"
+        "${DATABASE_URL}"
       ]
     },
     "slack": {

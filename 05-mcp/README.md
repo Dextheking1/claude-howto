@@ -557,7 +557,7 @@ Variables are expanded at runtime:
   "mcpServers": {
     "database": {
       "command": "npx",
-      "args": ["-y", "@bytebase/dbhub", "--dsn", "postgresql://readonly:pass@prod.db.com:5432/analytics"]
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "${DATABASE_URL}"]
     }
   }
 }
@@ -587,7 +587,7 @@ ORDER BY order_count DESC;
 **Setup**:
 ```bash
 claude mcp add --transport stdio database -- npx -y @bytebase/dbhub \
-  --dsn "postgresql://readonly:pass@prod.db.com:5432/analytics"
+  --dsn "$DATABASE_URL"
 ```
 
 ### Example 3: Multi-MCP Workflow
@@ -725,7 +725,7 @@ Store sensitive credentials in environment variables:
 # ~/.bashrc or ~/.zshrc
 export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxx"
 export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SLACK_BOT_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_BOT_TOKEN="your-slack-bot-token"
 export SLACK_TEAM_ID="T0000000000"
 ```
 

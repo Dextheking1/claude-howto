@@ -467,7 +467,7 @@ MCP 設定は環境変数の展開とフォールバックデフォルトをサ�
   "mcpServers": {
     "database": {
       "command": "npx",
-      "args": ["-y", "@bytebase/dbhub", "--dsn", "postgresql://readonly:pass@prod.db.com:5432/analytics"]
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "${DATABASE_URL}"]
     }
   }
 }
@@ -497,7 +497,7 @@ ORDER BY order_count DESC;
 **セットアップ：**
 ```bash
 claude mcp add --transport stdio database -- npx -y @bytebase/dbhub \
-  --dsn "postgresql://readonly:pass@prod.db.com:5432/analytics"
+  --dsn "$DATABASE_URL"
 ```
 
 ### 例 3：マルチ MCP ワークフロー
@@ -635,7 +635,7 @@ sequenceDiagram
 # ~/.bashrc or ~/.zshrc
 export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxx"
 export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SLACK_BOT_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_BOT_TOKEN="your-slack-bot-token"
 export SLACK_TEAM_ID="T0000000000"
 ```
 

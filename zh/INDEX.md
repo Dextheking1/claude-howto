@@ -707,8 +707,10 @@ cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 
 ```bash
 # 设置环境变量
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
+export SLACK_BOT_TOKEN="your-slack-bot-token"
+export SLACK_TEAM_ID="T0000000000"
 
 # 安装 MCP 配置（项目级）
 cp 05-mcp/multi-mcp.json .mcp.json

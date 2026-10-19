@@ -704,8 +704,10 @@ cp 02-memory/project-CLAUDE.md ./CLAUDE.md
 ### Tích Hợp Bên Ngoài
 ```bash
 # Đặt biến môi trường
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
+export SLACK_BOT_TOKEN="your-slack-bot-token"
+export SLACK_TEAM_ID="T0000000000"
 
 # Cài đặt config MCP (phạm vi dự án)
 cp 05-mcp/multi-mcp.json .mcp.json
