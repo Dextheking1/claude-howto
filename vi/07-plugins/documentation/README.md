@@ -18,7 +18,7 @@ Comprehensive documentation generation and maintenance for your project.
 ## Installation
 
 ```bash
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ## What's Included
@@ -117,3 +117,11 @@ export GITHUB_TOKEN="your_github_token"
 - Include practical examples
 - Validate regularly
 - Use templates for consistency
+
+---
+
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
+**Nguồn**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

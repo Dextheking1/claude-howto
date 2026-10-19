@@ -19,7 +19,7 @@ tags: plugins, code-review, pull-request
 ## 安装
 
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ## 包含内容
@@ -94,3 +94,11 @@ Claude:
 ✅ 性能：没有明显影响
 📝 建议：为边界情况添加测试
 ```
+
+---
+
+**最后更新**: 2026 年 10 月 18 日
+**Claude Code 版本**: 2.1.302
+**来源**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

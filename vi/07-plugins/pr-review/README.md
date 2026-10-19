@@ -18,7 +18,7 @@ Complete PR review workflow with security, testing, and documentation checks.
 ## Installation
 
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ## What's Included
@@ -89,3 +89,11 @@ Result:
 ✅ Performance: No significant impact
 📝 Recommendations: Add tests for edge cases
 ```
+
+---
+
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
+**Nguồn**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

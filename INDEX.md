@@ -262,7 +262,7 @@ pr-review/
 
 **Commands**: `/review-pr`, `/check-security`, `/check-tests`
 
-**Installation**: `/plugin install pr-review`
+**Installation**: `claude --plugin-dir ./07-plugins/pr-review` (from the repo root)
 
 ---
 
@@ -296,7 +296,7 @@ devops-automation/
 
 **Commands**: `/deploy`, `/rollback`, `/status`, `/incident`
 
-**Installation**: `/plugin install devops-automation`
+**Installation**: `claude --plugin-dir ./07-plugins/devops-automation` (from the repo root)
 
 ---
 
@@ -327,7 +327,7 @@ documentation/
 
 **Commands**: `/generate-api-docs`, `/generate-readme`, `/sync-docs`, `/validate-docs`
 
-**Installation**: `/plugin install documentation`
+**Installation**: `claude --plugin-dir ./07-plugins/documentation` (from the repo root)
 
 **Plus**: `README.md` - Plugins overview and usage guide
 
@@ -354,7 +354,7 @@ Save conversation state and explore alternative approaches.
 # To rewind, press Esc twice or use:
 /rewind
 # Then choose: Restore code and conversation, Restore conversation,
-# Restore code, Summarize from here, or Never mind
+# Restore code, Summarize from here, Summarize up to here, or Never mind
 ```
 
 **Use Cases**:
@@ -414,7 +414,7 @@ Advanced capabilities for complex workflows.
 - **plan**: Read-only analysis, no modifications
 - **auto**: Everything, with background safety checks — a classifier reviews commands and protected-directory writes (configured via the `autoMode` settings object)
 - **dontAsk**: Only pre-approved tools — auto-denies every call that would otherwise prompt. Claude runs only `permissions.allow` matches, read-only Bash commands, and calls approved by a `PreToolUse` hook
-- **bypassPermissions**: Accept all (requires `--dangerously-skip-permissions`)
+- **bypassPermissions**: Accept all (enable with `--permission-mode bypassPermissions` or the equivalent `--dangerously-skip-permissions`)
 
 ### Headless Mode (`claude -p`)
 - CI/CD integration
@@ -692,13 +692,13 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # Or install complete plugin
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ### DevOps & Deployment
 ```bash
 # Install plugin (includes everything)
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ### Documentation
@@ -713,7 +713,7 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Or install complete plugin
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### Team Standards
@@ -897,8 +897,8 @@ Want to add more examples? Follow the structure:
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/workflows#set-a-size-guideline
@@ -913,6 +913,8 @@ Want to add more examples? Follow the structure:
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/workflows#let-claude-decide-with-ultracode
 - https://code.claude.com/docs/en/cli-reference
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/chrome
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

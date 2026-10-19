@@ -44,7 +44,7 @@ Lệnh tích hợp sẵn là các lối tắt cho các hành động phổ biế
 | `/export [filename]` | Xuất cuộc hội thoại hiện tại sang file hoặc clipboard |
 | `/extra-usage` | Cấu hình sử dụng thêm cho giới hạn tốc độ |
 | `/fast [on\|off]` | Bật/tắt chế độ nhanh |
-| `/feedback` | Gửi phản hồi (bí danh: `/bug`) |
+| `/feedback` | Gửi phản hồi |
 | `/help` | Hiển thị trợ giúp |
 | `/hooks` | Xem cấu hình hooks |
 | `/ide` | Quản lý tích hợp IDE |
@@ -97,7 +97,7 @@ Những skills này được gửi kèm với Claude Code và được gọi nh�
 | `/batch <instruction>` | Điều phối các thay đổi song song quy mô lớn sử dụng worktrees |
 | `/claude-api` | Tải tài liệu tham khảo Claude API cho ngôn ngữ dự án |
 | `/debug [description]` | Bật ghi log debug |
-| `/loop [interval] <prompt>` | Chạy prompt lặp lại trên khoảng thời gian |
+| `/loop [interval] [prompt]` | Chạy prompt lặp lại trên khoảng thời gian |
 | `/simplify [focus]` | Review các file đã thay đổi để kiểm tra chất lượng code |
 
 ### Lệnh Đã Lỗi Thời
@@ -190,7 +190,7 @@ Hướng dẫn cho Claude để theo khi lệnh này được gọi.
 | Trường | Mục Đích | Mặc Định |
 |-------|---------|---------|
 | `name` | Tên lệnh (trở thành `/name`) | Tên thư mục |
-| `description` | Mô tả ngắn (giúp Claude biết khi nào sử dụng) | Đoạn đầu tiên |
+| `description` | Mô tả ngắn (giúp Claude biết khi nào sử dụng) | Dòng không trống đầu tiên |
 | `argument-hint` | Các đối số mong đợi cho tự động hoàn thành | Không có |
 | `allowed-tools` | Các công cụ lệnh có thể sử dụng mà không cần quyền | Kế thừa |
 | `model` | Mô hình cụ thể để sử dụng | Kế thừa |
@@ -561,8 +561,8 @@ Nếu cả hai tồn tại với cùng tên, **skill sẽ được ưu tiên**. 
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/output-styles
@@ -571,6 +571,7 @@ Nếu cả hai tồn tại với cùng tên, **skill sẽ được ưu tiên**. 
 - https://code.claude.com/docs/en/permissions#mcp
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/hooks#hook-lifecycle
+- https://code.claude.com/docs/en/skills
 **Các Mô Hình Tương Thích**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
 
 *Phần của series hướng dẫn [Claude How To](../)*

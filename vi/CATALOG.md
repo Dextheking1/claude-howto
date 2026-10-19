@@ -50,7 +50,7 @@ Commands là các lệnh tắt do người dùng gọi thực hiện các hành 
 | `/mcp` | Liệt kê MCP servers | Kiểm tra tích hợp bên ngoài |
 | `/memory` | Xem các file bộ nhớ đã tải | Debug tải context |
 | `/mobile` | Tạo QR code mobile | Truy cập mobile |
-| `/passes` | Xem usage passes | Thông tin subscription |
+| `/passes` | Chia sẻ một tuần dùng Claude Code miễn phí với bạn bè (chỉ tài khoản đủ điều kiện) | Giới thiệu bạn bè |
 | `/plugin` | Quản lý plugins | Cài đặt/gỡ mở rộng |
 | `/plan` | Vào planning mode | Triển khai phức tạp |
 | `/rewind` | Rewind về checkpoint | Hoàn tác thay đổi, khám phá alternatives |
@@ -81,10 +81,10 @@ Commands là các lệnh tắt do người dùng gọi thực hiện các hành 
 | `/subtask` | Spawn một subagent được fork kế thừa cuộc hội thoại và báo cáo lại (v2.1.212+) | Giao một tác vụ phụ mà không mất chỗ đang làm |
 | `/stats` | Hiển thị thống kê session | Review metrics session |
 | `/statusline` | Cấu hình status line | Tùy chỉnh hiển thị trạng thái |
-| `/stickers` | Xem stickers của session | Phần thưởng vui |
+| `/stickers` | Đặt mua stickers Claude Code | Phần thưởng vui |
 | `/fast` | Bật/tắt mode output nhanh | Tăng tốc độ responses |
 | `/terminal-setup` | Cấu hình tích hợp terminal | Thiết lập tính năng terminal |
-| `/upgrade` | Kiểm tra cập nhật | Quản lý phiên bản |
+| `/upgrade` | Mở trang nâng cấp để chuyển sang gói cao hơn | Nâng cấp gói |
 
 ### Custom Commands (Ví Dụ)
 
@@ -116,7 +116,7 @@ Claude Code hỗ trợ 6 permission modes điều khiển cách tool use đượ
 
 | Mode | Mô Tả | Khi Nào Dùng |
 |------|-------------|-------------|
-| `default` | Hỏi cho mỗi tool call | Sử dụng tương tác tiêu chuẩn |
+| `default` | Hỏi cho mỗi tool call | Tự xem xét mọi hành động. Từ v2.1.283, auto là chế độ khởi đầu tích hợp sẵn cho session terminal tương tác và VS Code |
 | `acceptEdits` | Tự động chấp nhận edits file, hỏi cho các khác | Workflows chỉnh sửa tin cậy |
 | `plan` | Nghiên cứu và đề xuất kế hoạch; không sửa mã nguồn cho đến khi bạn phê duyệt | Lập kế hoạch và khám phá |
 | `auto` | Tất cả hành động, có kiểm tra từ bộ phân loại an toàn nền | Tác vụ dài, giảm số lần nhắc quyền |
@@ -141,7 +141,7 @@ Các trợ lý AI chuyên biệt với context bị cô lập cho các tasks c�
 | **Plan** | Lập kế hoạch triển khai | Read, Glob, Grep, Bash | Kế thừa model | Thiết kế kiến trúc, lập kế hoạch |
 | **Explore** | Khám phá codebase | Read, Glob, Grep | Kế thừa (giới hạn ở Opus) | Tìm kiếm nhanh, hiểu code |
 | **claude** | Tác nhân dự phòng cho các tác vụ không khớp tác nhân chuyên biệt nào | All tools | Kế thừa model | Tác vụ không có tác nhân chuyên biệt; tác nhân mặc định cho phiên nền được điều phối |
-| **statusline-setup** | Cấu hình status line | Bash, Read, Write | Sonnet 4.6 | Cấu hình hiển thị status line |
+| **statusline-setup** | Cấu hình status line | Bash, Read, Write | Sonnet | Cấu hình hiển thị status line |
 | **claude-code-guide** | Trợ giúp và tài liệu | Read, Glob, Grep | Haiku | Nhận trợ giúp, học tính năng |
 
 ### Subagent Configuration Fields
@@ -230,8 +230,8 @@ cp -r ../03-skills/* ~/.claude/skills/
 | Skill | Mô Tả | Khi Tự Động Gọi |
 |-------|-------------|-------------------|
 | `/simplify` | Review code về chất lượng | Sau khi viết code |
-| `/batch` | Chạy prompts trên nhiều files | Operations hàng loạt |
-| `/debug` | Debug tests/errors thất bại | Sessions debugging |
+| `/batch` | Chia một thay đổi lớn thành 5–30 phần độc lập, mỗi phần do một subagent nền chạy trong worktree riêng | Refactor song song quy mô lớn |
+| `/debug [description]` | Bật debug logging cho session và xử lý sự cố từ debug log của session | Debug chính Claude Code |
 | `/loop` | Chạy prompts theo interval | Tasks định kỳ |
 | `/claude-api` | Xây dựng apps với Claude API | Phát triển API |
 
@@ -253,14 +253,17 @@ Bộ sưu tập được đóng gói của commands, agents, MCP servers, và ho
 
 ### Plugin Structure
 
-```
-.claude-plugin/
-├── plugin.json       # File manifest
+```text
+my-plugin/
+├── .claude-plugin/
+│   └── plugin.json   # File manifest (file duy nhất trong .claude-plugin/)
 ├── commands/         # Lệnh slash
 ├── agents/           # Tác nhân con
-├── skills/           # Skills
-├── mcp/              # Cấu hình MCP
-├── hooks/            # Script hooks
+├── skills/           # Skills (<name>/SKILL.md)
+├── hooks/
+│   └── hooks.json    # Cấu hình hook
+├── .mcp.json         # Cấu hình MCP
+├── bin/              # File thực thi
 └── scripts/          # Scripts tiện ích
 ```
 
@@ -270,7 +273,7 @@ Bộ sưu tập được đóng gói của commands, agents, MCP servers, và ho
 ```bash
 /plugin list              # Liệt kê plugins đã cài
 /plugin install <name>    # Cài plugin
-/plugin remove <name>     # Gỡ plugin
+/plugin uninstall <name>  # Gỡ plugin
 claude plugin update <name>   # Cập nhật plugin (CLI; dạng slash /plugin update được nhắc trong phần văn bản nhưng không có trong tài liệu tham chiếu lệnh)
 ```
 
@@ -284,9 +287,9 @@ Máy chủ Model Context Protocol cho truy cập công cụ và API bên ngoài.
 
 | Server | Mô Tả | Khi Nào Dùng | Phạm Vi | Cài Đặt |
 |--------|-------------|-------------|-------|--------------|
-| **GitHub** | Quản lý PR, issues, code | Workflows GitHub | Project | `claude mcp add github -- npx -y @modelcontextprotocol/server-github` |
-| **Database** | Truy vấn SQL, truy cập dữ liệu | Operations database | Project | `claude mcp add db -- npx -y @modelcontextprotocol/server-postgres` |
-| **Filesystem** | Operations file nâng cao | Tasks file phức tạp | User | `claude mcp add fs -- npx -y @modelcontextprotocol/server-filesystem` |
+| **GitHub** | Quản lý PR, issues, code | Workflows GitHub | Local | `claude mcp add github -- npx -y @modelcontextprotocol/server-github` |
+| **Database** | Truy vấn SQL, truy cập dữ liệu | Operations database | Local | `claude mcp add db -- npx -y @modelcontextprotocol/server-postgres` |
+| **Filesystem** | Operations file nâng cao | Tasks file phức tạp | Local | `claude mcp add fs -- npx -y @modelcontextprotocol/server-filesystem` |
 | **Slack** | Communication team | Thông báo, cập nhật | Project | Cấu hình trong settings |
 | **Google Docs** | Truy cập tài liệu | Chỉnh sửa, review docs | Project | Cấu hình trong settings |
 | **Asana** | Quản lý dự án | Theo dõi tasks | Project | Cấu hình trong settings |
@@ -294,7 +297,7 @@ Máy chủ Model Context Protocol cho truy cập công cụ và API bên ngoài.
 | **Memory** | Bộ nhớ lưu trữ | Nhớ lại qua sessions | User | Cấu hình trong settings |
 | **Context7** | Tài liệu thư viện | Tra cứu docs cập nhật | User | Cấu hình trong settings (server bên thứ ba) |
 
-> **Phạm Vi**: `Project` = team (`.mcp.json`), `User` = cá nhân (`~/.claude.json`), `Built-in` = được cài trước
+> **Phạm Vi**: `Local` = mặc định của `claude mcp add` khi không có `--scope` (chỉ bạn, dự án này; `~/.claude.json`), `Project` = team (`.mcp.json`, `--scope project`), `User` = cá nhân (`~/.claude.json`, `--scope user`), `Built-in` = được cài trước
 
 ### MCP Configuration Example
 
@@ -385,13 +388,17 @@ Tự động hóa dựa trên sự kiện thực thi shell commands trên các s
     "PreToolUse": [
       {
         "matcher": "Bash",
-        "command": "~/.claude/hooks/validate-bash.py"
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/validate-bash.py" }
+        ]
       }
     ],
     "PostToolUse": [
       {
         "matcher": "Write",
-        "command": "~/.claude/hooks/format-code.sh"
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/format-code.sh" }
+        ]
       }
     ]
   }
@@ -456,7 +463,7 @@ cp ../02-memory/personal-CLAUDE.md ~/.claude/CLAUDE.md
 | **Channels** | Communication đa kênh (Telegram, Slack, v.v.) (Research Preview) | Cấu hình plugins channels; Tháng 3 năm 2026 |
 | **Voice Dictation** | Input giọng nói cho prompts | Sử dụng icon microphone hoặc keybinding giọng nói |
 | **Agent Hook Type** | Hooks tạo subagent thay vì chạy shell command | Đặt `"type": "agent"` trong cấu hình hook |
-| **Prompt Hook Type** | Hooks chèn văn bản prompt vào conversation | Đặt `"type": "prompt"` trong cấu hình hook |
+| **Prompt Hook Type** | Hooks gửi prompt tới một model Claude để đánh giá trong một lượt; model trả về quyết định dạng JSON | Đặt `"type": "prompt"` trong cấu hình hook |
 | **MCP Elicitation** | MCP servers có thể yêu cầu input người dùng trong khi thực thi tool | Xử lý qua các sự kiện hook `Elicitation` và `ElicitationResult` |
 | **WebSocket MCP Transport** | Transport dựa trên WebSocket cho kết nối MCP server | Sử dụng `"transport": "websocket"` trong cấu hình MCP server |
 | **Plugin LSP Support** | Tích hợp Language Server Protocol qua plugins | Cấu hình servers LSP trong `plugin.json` cho tính năng editor |
@@ -520,8 +527,8 @@ chmod +x ~/.claude/hooks/*.sh
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/commands
@@ -534,3 +541,5 @@ chmod +x ~/.claude/hooks/*.sh
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/plugins/manifest-reference
+- https://code.claude.com/docs/en/plugins/cli-reference

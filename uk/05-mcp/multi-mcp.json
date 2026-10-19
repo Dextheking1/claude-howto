@@ -1,24 +1,21 @@
 {
   "mcpServers": {
     "github": {
-      "type": "stdio",
-      "command": "npx",
-      "args": [
-        "@modelcontextprotocol/server-github"
-      ],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     },
     "database": {
       "type": "stdio",
       "command": "npx",
       "args": [
-        "@modelcontextprotocol/server-database"
-      ],
-      "env": {
-        "DATABASE_URL": "${DATABASE_URL}"
-      }
+        "-y",
+        "@bytebase/dbhub",
+        "--dsn",
+        "postgresql://readonly:pass@prod.db.com:5432/analytics"
+      ]
     },
     "slack": {
       "type": "stdio",
@@ -27,7 +24,8 @@
         "@modelcontextprotocol/server-slack"
       ],
       "env": {
-        "SLACK_TOKEN": "${SLACK_TOKEN}"
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID": "${SLACK_TEAM_ID}"
       }
     },
     "filesystem": {

@@ -18,7 +18,7 @@
 ## Встановлення
 
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ## Що включено
@@ -89,3 +89,11 @@ Claude:
 ✅ Продуктивність: Суттєвого впливу немає
 📝 Рекомендації: Додати тести для граничних випадків
 ```
+
+---
+
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
+**Джерела**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

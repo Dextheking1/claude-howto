@@ -230,7 +230,7 @@ sequenceDiagram
 | `ENABLE_TOOL_SEARCH` | `true` | Усі інструменти MCP відкладаються |
 | `ENABLE_TOOL_SEARCH` | `false` | Вимкнено; всі описи інструментів надсилаються повністю |
 
-> **Примітка:** Пошук інструментів потребує моделі з підтримкою блоків `tool_reference`: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.5 та новіших моделей.
+> **Примітка:** Пошук інструментів потребує моделі з підтримкою блоків `tool_reference`: Claude Opus 4, Claude Sonnet 4, Claude Haiku 4.5 та новіших моделей (на Agent Platform від Google Cloud — Opus 4.5, Sonnet 4.5, Haiku 4.5 та новіших).
 
 ## Динамічне оновлення інструментів
 
@@ -293,7 +293,7 @@ MCP-сервери можуть надавати промпти, що відоб
 
 ```bash
 # Рівень project — записує в .mcp.json, щоб конфігурацію бачила вся команда
-claude mcp add --scope project --transport http github https://api.github.com/mcp
+claude mcp add --scope project --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Рівень user — доступний у кожному проєкті
 claude mcp add --scope user --transport stdio memory -- npx @modelcontextprotocol/server-memory
@@ -308,7 +308,10 @@ claude mcp add --scope user --transport stdio memory -- npx @modelcontextprotoco
   "mcpServers": {
     "github": {
       "type": "http",
-      "url": "https://api.github.com/mcp"
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   }
 }
@@ -322,7 +325,7 @@ claude mcp add --scope user --transport stdio memory -- npx @modelcontextprotoco
 
 ```bash
 # Додати HTTP-сервер
-claude mcp add --transport http github https://api.github.com/mcp
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Додати локальний stdio-сервер
 claude mcp add --transport stdio database -- npx @company/db-server
@@ -371,10 +374,10 @@ claude mcp add-json events-server '{"type":"stdio","command":"npx","args":["@mod
 {
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     }
   }
@@ -423,9 +426,9 @@ Reviewers: @bob, @charlie
 
 **Налаштування**:
 ```bash
-export GITHUB_TOKEN="your_github_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_github_token"
 # Або додайте через CLI:
-claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 ```
 
 ### Підстановка змінних оточення в конфігурації
@@ -467,10 +470,7 @@ claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-gith
   "mcpServers": {
     "database": {
       "command": "npx",
-      "args": ["@modelcontextprotocol/server-database"],
-      "env": {
-        "DATABASE_URL": "${DATABASE_URL}"
-      }
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "postgresql://readonly:pass@prod.db.com:5432/analytics"]
     }
   }
 }
@@ -499,9 +499,8 @@ ORDER BY order_count DESC;
 
 **Налаштування**:
 ```bash
-export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-# Або додайте через CLI:
-claude mcp add --transport stdio database -- npx @modelcontextprotocol/server-database
+claude mcp add --transport stdio database -- npx -y @bytebase/dbhub \
+  --dsn "postgresql://readonly:pass@prod.db.com:5432/analytics"
 ```
 
 ### Приклад 3: Мульти-MCP воркфлов
@@ -605,9 +604,10 @@ sequenceDiagram
 
 ```bash
 # ~/.bashrc або ~/.zshrc
-export GITHUB_TOKEN="ghp_xxxxxxxxxxxxx"
+export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxx"
 export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SLACK_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_BOT_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_TEAM_ID="T0000000000"
 ```
 
 Потім посилайтесь на них у конфігурації MCP:
@@ -615,7 +615,7 @@ export SLACK_TOKEN="xoxb-xxxxxxxxxxxxx"
 ```json
 {
   "env": {
-    "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
   }
 }
 ```
@@ -728,6 +728,8 @@ MCP-сервери можна визначати вбудовано у фрон�
 
 ```yaml
 ---
+name: my-tool-agent
+description: Uses my-tool for specialized operations
 mcpServers:
   my-tool:
     type: http
@@ -746,7 +748,7 @@ Claude Code встановлює ліміти на вивід інструмен
 | Ліміт | Поріг | Поведінка |
 |-------|-------|----------|
 | **Попередження** | 10 000 токенів | Відображається попередження про великий вивід |
-| **Максимум за замовч.** | 25 000 токенів | Вивід обрізається за цим лімітом |
+| **Максимум за замовч.** | 25 000 токенів | Більший вивід зберігається у файл, а в розмову потрапляє шлях до файлу |
 | **Збереження на диск** | 50 000 символів | Результати інструментів, що перевищують 50K символів, зберігаються на диск |
 
 Максимальний ліміт виводу налаштовується через змінну оточення `MAX_MCP_OUTPUT_TOKENS`:
@@ -1019,7 +1021,7 @@ MCPorter доповнює підхід з виконанням коду, опи�
 
 1. **Додайте перший MCP-сервер** через CLI (приклад: GitHub):
 ```bash
-claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 ```
 
    Або створіть файл `.mcp.json` у корені проєкту:
@@ -1027,10 +1029,10 @@ claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-gith
 {
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     }
   }
@@ -1039,7 +1041,7 @@ claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-gith
 
 2. **Встановіть змінні оточення:**
 ```bash
-export GITHUB_TOKEN="your_github_personal_access_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_github_personal_access_token"
 ```
 
 3. **Протестуйте підключення:**
@@ -1062,7 +1064,7 @@ npm install -g @modelcontextprotocol/server-github
 
 **Database MCP:**
 ```bash
-npm install -g @modelcontextprotocol/server-database
+npm install -g @bytebase/dbhub
 ```
 
 **Filesystem MCP:**
@@ -1070,7 +1072,7 @@ npm install -g @modelcontextprotocol/server-database
 npm install -g @modelcontextprotocol/server-filesystem
 ```
 
-**Slack MCP:**
+**Slack MCP (застарілий пакет):**
 ```bash
 npm install -g @modelcontextprotocol/server-slack
 ```
@@ -1089,10 +1091,10 @@ npm install -g @modelcontextprotocol/server-github
 ### Помилка автентифікації
 ```bash
 # Перевірте, чи встановлена змінна оточення
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 
 # Перевстановіть, якщо потрібно
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 
 # Перевірте дозволи токена
 # Дозволи GitHub-токена: https://github.com/settings/tokens
@@ -1139,8 +1141,8 @@ export GITHUB_TOKEN="your_token"
 - [Документація Claude API](https://docs.anthropic.com)
 
 ---
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/mcp#configure-tool-search
@@ -1149,4 +1151,5 @@ export GITHUB_TOKEN="your_token"
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.296
 - https://code.claude.com/docs/en/mcp#tool-search-for-mcp-server-authors
 - https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcp-json
+- https://code.claude.com/docs/en/sub-agents
 **Сумісні моделі**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

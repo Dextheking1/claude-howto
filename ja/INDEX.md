@@ -262,7 +262,7 @@ pr-review/
 
 **コマンド**：`/review-pr`、`/check-security`、`/check-tests`
 
-**インストール**：`/plugin install pr-review`
+**インストール**：`claude --plugin-dir ./07-plugins/pr-review` （リポジトリのルートから）
 
 ---
 
@@ -296,7 +296,7 @@ devops-automation/
 
 **コマンド**：`/deploy`、`/rollback`、`/status`、`/incident`
 
-**インストール**：`/plugin install devops-automation`
+**インストール**：`claude --plugin-dir ./07-plugins/devops-automation` （リポジトリのルートから）
 
 ---
 
@@ -327,7 +327,7 @@ documentation/
 
 **コマンド**：`/generate-api-docs`、`/generate-readme`、`/sync-docs`、`/validate-docs`
 
-**インストール**：`/plugin install documentation`
+**インストール**：`claude --plugin-dir ./07-plugins/documentation` （リポジトリのルートから）
 
 **追加**：`README.md` — プラグイン概要と使用ガイド
 
@@ -354,7 +354,7 @@ documentation/
 # 巻き戻しは Esc を 2 回押すか、次を実行:
 /rewind
 # 選択肢: コードと会話の復元、会話の復元、
-# コードの復元、ここから要約、やめる
+# コードの復元、ここから要約、ここまでを要約、やめる
 ```
 
 **ユースケース**：
@@ -405,7 +405,7 @@ documentation/
 - **plan**：読み取り専用分析、変更なし
 - **auto**：バックグラウンドの安全チェック付きで全操作を実行 — 分類器がコマンドと保護ディレクトリへの書き込みを審査する（`autoMode` 設定オブジェクトで構成）
 - **dontAsk**：事前承認済みのツールのみ — 本来プロンプトが出る呼び出しはすべて自動的に拒否される。Claude が実行できるのは `permissions.allow` に一致するもの、読み取り専用の Bash コマンド、`PreToolUse` フックが承認した呼び出しに限られる
-- **bypassPermissions**：すべて承認（`--dangerously-skip-permissions` が必要）
+- **bypassPermissions**：すべて承認（`--permission-mode bypassPermissions` または同等の `--dangerously-skip-permissions` で有効化）
 
 ### ヘッドレスモード（`claude -p`）
 - CI/CD 統合
@@ -677,13 +677,13 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # あるいは完全プラグインをインストール
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ### DevOps とデプロイ
 ```bash
 # プラグインをインストール (すべて含む)
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ### ドキュメント
@@ -698,7 +698,7 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # あるいは完全プラグインをインストール
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### チーム標準
@@ -882,8 +882,8 @@ Run tests in background
 
 ---
 
-**最終更新**：2026 年 10 月 15 日
-**Claude Code バージョン**：2.1.300
+**最終更新**：2026 年 10 月 18 日
+**Claude Code バージョン**：2.1.302
 **互換モデル**：Claude Sonnet 4.6、Claude Opus 4.7、Claude Haiku 4.5
 **例題総数**：100 ファイル超
 **カテゴリ**：10 機能
@@ -899,3 +899,6 @@ Run tests in background
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/permission-modes

@@ -153,26 +153,29 @@ Instead of the shell-form `"command": "..."`, a command hook can spawn a binary 
 ```json
 {
   "type": "command",
-  "args": ["python3", "$CLAUDE_PROJECT_DIR/.claude/hooks/validate.py", "--strict"],
+  "command": "python3",
+  "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/validate.py", "--strict"],
   "timeout": 60
 }
 ```
 
-The two forms are **mutually exclusive** — a hook with both `command` and `args` set is rejected at config load. Use `command` when you need pipes, redirection, `&&` chaining, or shell expansions; use `args` when you are calling one binary with arguments.
+`command` is always required: when `args` is set, `command` is the executable to spawn (resolved on `PATH`) and `args` is its argument vector. Omit `args` (shell form) when you need pipes, redirection, `&&` chaining, or shell expansions; use `args` when you are calling one binary with arguments.
 
 ### HTTP Hooks
 
 > Added in v2.1.63.
 
-Remote webhook endpoints that receive the same JSON input as command hooks. HTTP hooks POST JSON to the URL and receive a JSON response. HTTP hooks are routed through the sandbox when sandboxing is enabled. Environment variable interpolation in URLs requires an explicit `allowedEnvVars` list for security.
+Remote webhook endpoints that receive the same JSON input as command hooks. HTTP hooks POST JSON to the URL and receive a JSON response. HTTP hooks are routed through the sandbox when sandboxing is enabled. Environment variable interpolation into header values requires an explicit `allowedEnvVars` list for security.
 
 ```json
 {
   "hooks": {
     "PostToolUse": [{
-      "type": "http",
-      "url": "https://my-webhook.example.com/hook",
-      "matcher": "Write"
+      "matcher": "Write",
+      "hooks": [{
+        "type": "http",
+        "url": "https://my-webhook.example.com/hook"
+      }]
     }]
   }
 }
@@ -182,7 +185,7 @@ Remote webhook endpoints that receive the same JSON input as command hooks. HTTP
 - `"type": "http"` -- identifies this as an HTTP hook
 - `"url"` -- the webhook endpoint URL
 - Routed through sandbox when sandbox is enabled
-- Requires explicit `allowedEnvVars` list for any environment variable interpolation in the URL
+- Requires explicit `allowedEnvVars` list for any environment variable interpolation in `headers` values
 
 ### Prompt Hooks
 
@@ -210,7 +213,8 @@ The `mcp_tool` type invokes a configured MCP tool directly; configuration refere
   "hooks": [{
     "type": "mcp_tool",
     "server": "my-mcp-server",
-    "tool": "validate_edit"
+    "tool": "validate_edit",
+    "input": { "file_path": "${tool_input.file_path}" }
   }]
 }
 ```
@@ -219,8 +223,9 @@ The `mcp_tool` type invokes a configured MCP tool directly; configuration refere
 - `"type": "mcp_tool"` -- identifies this as an MCP tool hook
 - `"server"` -- name of the configured MCP server
 - `"tool"` -- the tool name on that server to invoke
+- `"input"` -- optional arguments passed to the tool; string values support `${path}` substitution from the hook's JSON input, such as `"${tool_input.file_path}"`
 
-The hook input (tool name, tool input, session context) is passed as the MCP tool's arguments. See [MCP server setup](../05-mcp/README.md) for configuring MCP servers.
+The tool's arguments come from `input` (with `${path}` substitution), not from the hook input directly. See [MCP server setup](../05-mcp/README.md) for configuring MCP servers.
 
 ### Agent Hooks
 
@@ -228,7 +233,7 @@ Subagent-based verification hooks that spawn a dedicated agent to evaluate condi
 
 > **Note**: Agent hooks are experimental and may change.
 
-> **Note**: Since v2.1.280, agent hooks don't run on `PermissionRequest` — their answer could never allow or deny the request. Use a command, http, mcp_tool, or prompt hook there.
+> **Note**: Since v2.1.280, agent hooks don't run on `PermissionRequest` — their answer could never allow or deny the request. Use a command or HTTP hook that returns a decision object there (a prompt hook's `ok: false` has no effect on `PermissionRequest`).
 
 ```json
 {
@@ -324,10 +329,10 @@ Runs after Claude creates tool parameters and before processing. Use this to val
 - `permissionDecision`: `"allow"`, `"deny"`, `"ask"`, or `"defer"`
   - `"allow"` skips the permission prompt (except for tools that require user interaction, and connector tools your organization set to `ask`)
   - `"deny"` prevents the tool call
-  - `"ask"` prompts the user to confirm
+  - `"ask"` prompts the user to confirm; the prompt names the plugin or skill the hook comes from (v2.1.301)
   - `"defer"` exits gracefully so the tool can be resumed later; `permissionDecisionReason`, `updatedInput` and `additionalContext` are all ignored for this value
   - Deny and ask rules are still evaluated regardless of what the hook returns. When multiple `PreToolUse` hooks disagree, precedence is `deny` > `defer` > `ask` > `allow`
-- `permissionDecisionReason`: Explanation for decision. Shown to the user (not Claude) for `"allow"` and `"ask"`; shown to Claude for `"deny"`; ignored for `"defer"`
+- `permissionDecisionReason`: Explanation for decision. Shown to the user (not Claude) for `"ask"`; shown to Claude for `"deny"`; for `"allow"` and `"defer"`, written to the debug log only
 - `updatedInput`: Replacement tool input (replaces the whole input object). Since v2.1.300 it is validated like Claude's own input — unknown keys are dropped, and input the tool rejects denies the call.
 
 ### PostToolUse
@@ -365,7 +370,7 @@ Runs immediately after tool completion. Use for verification, logging, or provid
 
 #### Recoverable blocks (`continueOnBlock`, v2.1.139)
 
-By default, a `PostToolUse` hook that returns `"decision": "block"` aborts the current turn. Set `"continueOnBlock": true` on the hook to instead surface the rejection back to Claude as a `tool_result`, so the model can read the feedback and retry or adjust.
+A command hook that returns `"decision": "block"` on `PostToolUse` adds the `reason` next to the tool result; Claude still sees the original output. `continueOnBlock` is a **prompt**-hook field (command and agent hooks have none): by default, a prompt hook that returns `ok: false` on `PostToolUse` ends the turn and shows the reason as a warning line. Set `"continueOnBlock": true` on the prompt hook to instead feed the reason back to Claude and continue the turn, so the model can read the feedback and retry or adjust.
 
 ```json
 {
@@ -375,8 +380,8 @@ By default, a `PostToolUse` hook that returns `"decision": "block"` aborts the c
         "matcher": "Write|Edit",
         "hooks": [
           {
-            "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/policy-check.py",
+            "type": "prompt",
+            "prompt": "Check this edit against our write policy (for example, read-only paths). Hook input: $ARGUMENTS",
             "continueOnBlock": true
           }
         ]
@@ -440,7 +445,7 @@ Run when Claude finishes responding (Stop) or a subagent completes (SubagentStop
 }
 ```
 
-> **Safety cap on consecutive blocks (v2.1.143)**: If a `Stop` hook returns `"decision": "block"` (or sets `continue: false`) **8 times in a row** for the same turn, Claude Code short-circuits the loop and ends the session with a warning. Override the threshold with the env var `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP=<integer>` (set to `0` to disable the cap entirely). This prevents a buggy Stop hook from looping the session forever.
+> **Safety cap on consecutive blocks (v2.1.143)**: If a `Stop` hook returns `"decision": "block"` (or sets `continue: false`) **8 times in a row** for the same turn, Claude Code overrides the next block and ends the turn. Override the threshold with the env var `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP=<integer>` (set to `0` to disable the cap entirely). This prevents a buggy Stop hook from looping the turn forever.
 
 **Return field (v2.1.163):** A `Stop` or `SubagentStop` hook can return `hookSpecificOutput.additionalContext` to give Claude feedback and **continue the turn without surfacing an error label**. Previously, influencing the model from a Stop hook was awkward; now the hook can inject context cleanly, avoiding the error-label behavior of older feedback paths (such as `"decision": "block"`).
 
@@ -717,7 +722,7 @@ All hooks receive JSON input via stdin:
   },
   "tool_use_id": "toolu_01ABC123...",
   "agent_id": "agent-abc123",
-  "agent_type": "main",
+  "agent_type": "security-reviewer",
   "worktree": "/path/to/worktree",
   "effort": { "level": "medium" }
 }
@@ -733,7 +738,7 @@ All hooks receive JSON input via stdin:
 | `prompt_id` | UUID of the prompt being processed; correlates with the OpenTelemetry `prompt.id` attribute (v2.1.196) |
 | `hook_event_name` | Name of the event that triggered the hook |
 | `agent_id` | Identifier of the agent running this hook |
-| `agent_type` | Type of agent (`"main"`, subagent type name, etc.) |
+| `agent_type` | Agent name (for example, `"Explore"` or `"security-reviewer"`); present only when the session uses `--agent` or the hook fires inside a subagent |
 | `worktree` | Path to the git worktree, if the agent is running in one |
 | `effort.level` | (v2.1.133+) Active effort level: `low`, `medium`, `high`, `xhigh`, or `max` |
 
@@ -743,7 +748,7 @@ All hooks receive JSON input via stdin:
 |-----------|---------|----------|
 | **0** | Success | Continue, parse JSON stdout |
 | **2** | Blocking error | Block operation, stderr shown as error |
-| **Other** | Non-blocking error | Continue, stderr shown in verbose mode |
+| **Other** | Non-blocking error | Continue; a `<hook name> hook error` notice in the transcript shows the first line of stderr |
 
 ### JSON Output (stdout, exit code 0)
 
@@ -764,13 +769,18 @@ All hooks receive JSON input via stdin:
 }
 ```
 
-> **Scope (v2.1.121+):** `hookSpecificOutput.updatedToolOutput` is now honored for **all** tools, not just MCP tools. A `PostToolUse` hook on `Bash`, `Edit`, `Read`, etc. can rewrite the tool's output before Claude sees it — useful for redacting secrets, normalizing diffs, or filtering noisy command output. Example (strip ANSI color codes from a `Bash` output):
+> **Scope (v2.1.121+):** `hookSpecificOutput.updatedToolOutput` is now honored for **all** tools, not just MCP tools. A `PostToolUse` hook on `Bash`, `Edit`, `Read`, etc. can rewrite the tool's output before Claude sees it — useful for redacting secrets, normalizing diffs, or filtering noisy command output. The value must match the tool's output shape — `Bash` returns an object with `stdout`, `stderr`, `interrupted`, and `isImage`; for built-in tools a value that doesn't match is ignored and the original output is used. Example (strip ANSI color codes from a `Bash` output):
 >
 > ```json
 > {
 >   "hookSpecificOutput": {
 >     "hookEventName": "PostToolUse",
->     "updatedToolOutput": "<plain-text output with ANSI escapes removed>"
+>     "updatedToolOutput": {
+>       "stdout": "<output with ANSI escapes removed>",
+>       "stderr": "",
+>       "interrupted": false,
+>       "isImage": false
+>     }
 >   }
 > }
 > ```
@@ -787,15 +797,15 @@ Hooks can emit raw OSC (operating system command) escape sequences by setting `t
 |-------|------|-------------|
 | `terminalSequence` | string | Raw escape sequence (typically OSC 9 / OSC 0 / OSC 777). Written to the host terminal verbatim. |
 
-Example — fire an OSC 9 desktop notification when a long task completes:
+Example — fire an OSC 9 desktop notification when a long task completes. Write ESC and BEL as JSON escapes (`\u001b`, `\u0007`) or build the value with `printf` and `jq`; raw control bytes inside a JSON string fail to parse:
 
 ```json
 {
-  "terminalSequence": "]9;Task complete"
+  "terminalSequence": "\u001b]9;Task complete\u0007"
 }
 ```
 
-Configure it on a `Stop` hook so the notification fires when Claude finishes a turn. Sequence support is terminal-dependent; Kitty/iTerm2/Windows Terminal honor OSC 9.
+Configure it on a `Stop` hook so the notification fires when Claude finishes a turn. Sequence support is terminal-dependent; iTerm2, Windows Terminal, and WezTerm honor OSC 9, while Kitty uses OSC 99.
 
 ## Environment Variables
 
@@ -809,7 +819,7 @@ Configure it on a `Stop` hook so the notification fires when Claude finishes a t
 | `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` | SessionEnd hooks | Configurable timeout in milliseconds for SessionEnd hooks (overrides default) |
 | `CLAUDE_CODE_SESSION_ID` | Bash tool subprocesses (v2.1.132+) | Session UUID; matches the `session_id` field in hook input JSON. Use to correlate bash logs with hook telemetry. |
 | `CLAUDE_EFFORT` | Bash tool subprocesses (v2.1.133+) | Active effort level (`low`/`medium`/`high`/`xhigh`/`max`); matches `effort.level` in hook input JSON. |
-| `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` | Process-wide (v2.1.143+) | Max consecutive Stop-hook blocks before the session ends with a warning (default `8`). Set to `0` to disable the cap. |
+| `CLAUDE_CODE_STOP_HOOK_BLOCK_CAP` | Process-wide (v2.1.143+) | Max consecutive Stop-hook blocks before Claude Code overrides the next block and ends the turn (default `8`). Set to `0` to disable the cap. |
 
 ## Prompt-Based Hooks
 
@@ -836,12 +846,12 @@ For `Stop` and `SubagentStop` events, you can use LLM-based evaluation:
 **LLM Response Schema:**
 ```json
 {
-  "decision": "approve",
-  "reason": "All tasks completed successfully",
-  "continue": false,
-  "stopReason": "Task complete"
+  "ok": false,
+  "reason": "Tests were not run after the last edit"
 }
 ```
+
+`ok: true` allows the action; `reason` is required when `ok` is `false`.
 
 ## Examples
 
@@ -1253,15 +1263,16 @@ being overwritten.
 `Stop` fires after *every* Claude response. `SessionEnd` fires once when the session
 terminates — exactly what you want for an end-of-session diary entry.
 
-**Why `/dev/tty` for input?**
-Hook scripts receive the hook JSON payload via `stdin`, so interactive `read` must use
-`/dev/tty` directly to reach the terminal.
+**Why no interactive prompt?**
+Hooks run without a controlling terminal, so `/dev/tty` is unavailable and a hook can't
+prompt you. Pass the modules (and optional notes) as environment variables when you
+launch Claude Code, e.g. `CLAUDE_HOWTO_MODULES=06,07 claude`.
 
 **File:** `06-hooks/session-end.sh`
 
 ```bash
 #!/usr/bin/env bash
-# SessionEnd hook: prompts for modules worked on, then appends a session record
+# SessionEnd hook: records the modules worked on, then appends a session record
 # to ~/.claude-howto-progress.json for persistent learning progress tracking.
 
 PROGRESS_FILE="$HOME/.claude-howto-progress.json"
@@ -1278,12 +1289,10 @@ fi
 DATE=$(date +"%Y-%m-%d")
 TIME=$(date +"%H:%M")
 
-echo ""
-echo " Which modules did you work on? (e.g. 06,07 or press Enter to skip)"
-echo " 01=Slash  02=Memory  03=Skills  04=Subagents  05=MCP"
-echo " 06=Hooks  07=Plugins 08=Checkpoints 09=Advanced 10=CLI"
-printf " > "
-read -r INPUT </dev/tty
+# Modules worked on, e.g. launch with: CLAUDE_HOWTO_MODULES=06,07 claude
+# 01=Slash  02=Memory  03=Skills  04=Subagents  05=MCP
+# 06=Hooks  07=Plugins 08=Checkpoints 09=Advanced 10=CLI
+INPUT="${CLAUDE_HOWTO_MODULES:-}"
 
 if [ -z "$INPUT" ] || [ "$INPUT" = "skip" ]; then
   exit 0
@@ -1305,8 +1314,8 @@ MODULES_JSON=$(echo "$INPUT" | tr ',' '\n' | tr -d ' ' | while read -r m; do
   esac
 done | paste -sd ',' -)
 
-printf " Notes? (optional, press Enter to skip): "
-read -r NOTES </dev/tty
+# Optional notes, e.g. CLAUDE_HOWTO_NOTES="tried the pre-commit example"
+NOTES="${CLAUDE_HOWTO_NOTES:-}"
 
 # Pass NOTES as a separate argument so Python handles JSON escaping —
 # avoids broken JSON when notes contain quotes or backslashes.
@@ -1352,7 +1361,8 @@ chmod +x .claude/hooks/session-end.sh
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/session-end.sh\""
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/session-end.sh\"",
+            "timeout": 10
           }
         ]
       }
@@ -1360,6 +1370,8 @@ chmod +x .claude/hooks/session-end.sh
   }
 }
 ```
+
+SessionEnd hooks have a 1.5-second default budget. Setting a per-hook `"timeout"` (in seconds) raises the budget to match, up to 60 seconds; a hook without its own `timeout` is canceled after 1.5 seconds.
 
 **Output — `~/.claude-howto-progress.json`:**
 
@@ -1381,7 +1393,8 @@ chmod +x .claude/hooks/session-end.sh
 | Pattern | Why it matters |
 |---------|----------------|
 | `SessionEnd` event | Fires once on exit — not after every response like `Stop` |
-| `read -r INPUT </dev/tty` | Hooks own `stdin` (JSON payload); use `/dev/tty` for user input |
+| `INPUT="${CLAUDE_HOWTO_MODULES:-}"` | Hooks have no terminal (`/dev/tty` is unavailable), so input comes from env vars |
+| `"timeout": 10` | SessionEnd hooks are canceled after 1.5 s unless they set their own `timeout` |
 | `$CLAUDE_PROJECT_DIR` | Portable path — never hardcode `/Users/yourname/...` |
 | Guard clause at top | Prevents the hook running in unrelated projects if installed globally |
 | Store outside the repo | `~/` path survives `git pull` without overwriting your data |
@@ -1463,7 +1476,7 @@ MCP tools follow the pattern `mcp__<server>__<tool>`:
 
 - **Workspace trust required:** The `statusLine` and `fileSuggestion` hook output commands now require workspace trust acceptance before they take effect.
 - **Status-line terminal size (v2.1.153):** Status-line command scripts now receive `COLUMNS` and `LINES` environment variables, so a script can adapt its output to the terminal width/height (e.g. `[ "$COLUMNS" -lt 80 ] && short_output`).
-- **HTTP hooks and environment variables:** HTTP hooks require an explicit `allowedEnvVars` list to use environment variable interpolation in URLs. This prevents accidental leakage of sensitive environment variables to remote endpoints.
+- **HTTP hooks and environment variables:** HTTP hooks require an explicit `allowedEnvVars` list to use environment variable interpolation in header values. This prevents accidental leakage of sensitive environment variables to remote endpoints.
 - **Managed settings hierarchy:** The `disableAllHooks` setting now respects the managed settings hierarchy, meaning organization-level settings can enforce hook disablement that individual users cannot override.
 - **PowerShell auto-approve (v2.1.119):** PowerShell tool commands can be auto-approved in permission mode, matching Bash. This brings parity for Windows users running Claude Code with PowerShell-backed shell tools.
 - **Bash bare env-var auto-approve closed (v2.1.145):** Before v2.1.145, a Bash command of the form `FOO=bar somecommand` (a bare variable assignment inline with a non-allowlisted command) could be auto-approved when only `FOO=bar` by itself was on the allowlist. v2.1.145 closes this — such commands now hit the permission prompt. Scripts relying on the implicit allow will start prompting; re-allow them explicitly via a `Bash(...)` permission rule that covers the full command, not just the variable assignment.
@@ -1579,7 +1592,7 @@ echo $?
 | Aspect | Behavior |
 |--------|----------|
 | **Timeout** | 600 seconds default for command/http/mcp_tool (30 for prompt, 60 for agent); configurable per hook |
-| **Parallelization** | All matching hooks run in parallel |
+| **Parallelization** | All matching hooks run in parallel; since v2.1.302, at most 12 prompt or agent hooks of one event run at a time and the rest wait their turn. |
 | **Deduplication** | Identical hook commands deduplicated |
 | **Environment** | Runs in current directory with Claude Code's environment |
 
@@ -1635,8 +1648,8 @@ Edit `~/.claude/settings.json` or `.claude/settings.json` with the hook configur
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/hooks
 - https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
@@ -1651,4 +1664,6 @@ Edit `~/.claude/settings.json` or `.claude/settings.json` with the hook configur
 - https://code.claude.com/docs/en/hooks#userpromptsubmit-input
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/changelog#2-1-300
+- https://code.claude.com/docs/en/changelog#2-1-301
+- https://code.claude.com/docs/en/changelog#2-1-302
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

@@ -75,10 +75,11 @@ Subagent files can be stored in multiple locations with different scopes:
 
 | Priority | Type | Location | Scope |
 |----------|------|----------|-------|
-| 1 (highest) | **CLI-defined** | Via `--agents` flag (JSON) | Session only |
-| 2 | **Project subagents** | `.claude/agents/` | Current project |
-| 3 | **User subagents** | `~/.claude/agents/` | All projects |
-| 4 (lowest) | **Plugin agents** | Plugin `agents/` directory | Via plugins |
+| 1 (highest) | **Managed** | Managed settings | Organization-wide |
+| 2 | **CLI-defined** | Via `--agents` flag (JSON) | Session only |
+| 3 | **Project subagents** | `.claude/agents/` | Current project |
+| 4 | **User subagents** | `~/.claude/agents/` | All projects |
+| 5 (lowest) | **Plugin agents** | Plugin `agents/` directory | Via plugins |
 
 When duplicate names exist, higher-priority sources take precedence.
 
@@ -129,7 +130,7 @@ to solving problems.
 |-------|----------|-------------|
 | `name` | Yes | Unique identifier (lowercase letters and hyphens). Lookup is normalized (case- and separator-insensitive — see below), but a name containing `:` is **rejected** as of v2.1.218: `:` is reserved for plugin namespacing |
 | `description` | Yes | Natural language description of purpose. Include "use PROACTIVELY" to encourage automatic invocation |
-| `tools` | No | Comma-separated list of specific tools. Omit to inherit all tools. Supports `Agent(agent_name)` syntax to restrict spawnable subagents. MCP: `mcp__<server>__*` grants a whole server (v2.1.299+: matches only that exact server name). |
+| `tools` | No | Comma-separated list of specific tools. Omit to inherit all tools. Supports `Agent(agent_name)` syntax to restrict spawnable subagents when the agent runs as the main thread with `claude --agent`; inside a subagent the type list is ignored. MCP: `mcp__<server>__*` grants a whole server (v2.1.299+: matches only that exact server name). |
 | `disallowedTools` | No | Comma-separated list of tools the subagent must not use |
 | `model` | No | Model to use: `sonnet`, `opus`, `haiku`, full model ID, or `inherit`. Defaults to configured subagent model |
 | `permissionMode` | No | `default` (Manual mode; `manual` accepted as an alias since v2.1.200), `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan`, `auto`. As of v2.1.212, the Task tool's `mode` invocation parameter is deprecated and ignored — subagents inherit the parent session's permission mode by default unless overridden here. When the parent runs in `bypassPermissions`, `acceptEdits` or `auto`, the subagent's `permissionMode` is ignored |
@@ -138,7 +139,7 @@ to solving problems.
 | `mcpServers` | No | MCP servers to make available to the subagent |
 | `hooks` | No | Hooks that run only while this subagent is active. All hook events are supported; most common are `PreToolUse`, `PostToolUse`, `Stop` (runs as `SubagentStop`) |
 | `memory` | No | Persistent memory directory scope: `user`, `project`, or `local` |
-| `background` | No | Subagents already run in the background by default (v2.1.198). Set to `true` to *force* background always and prevent inline execution |
+| `background` | No | Subagents already run in the background by default (v2.1.198). Since v2.1.302 the desktop app and VS Code also always run the main conversation's subagents in the background; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code run in the foreground by default. Set to `true` to *force* background always and prevent inline execution |
 | `effort` | No | Reasoning effort level: `low`, `medium`, `high`, `xhigh`, or `max`. Overrides the session effort level; available levels depend on the model. Claude can also pass an `effort` value when it calls the Agent tool (v2.1.292). |
 | `isolation` | No | Set to `worktree` to give the subagent its own git worktree |
 | `initialPrompt` | No | Auto-submitted first turn when the subagent runs as the main agent |
@@ -181,7 +182,9 @@ mcpServers:
     url: https://mcp.notion.com/mcp
   github:
     type: http
-    url: https://api.github.com/mcp
+    url: https://api.githubcopilot.com/mcp/
+    headers:
+      Authorization: "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
 tools: Read, Grep, Glob
 ---
 
@@ -259,12 +262,13 @@ claude --agents '{
 **Priority of Agent Definitions:**
 
 Agent definitions are loaded with this priority order (first match wins):
-1. **CLI-defined** - `--agents` flag (session only, JSON)
-2. **Project-level** - `.claude/agents/` (current project)
-3. **User-level** - `~/.claude/agents/` (all projects)
-4. **Plugin-level** - Plugin `agents/` directory
+1. **Managed** - managed settings (organization-wide)
+2. **CLI-defined** - `--agents` flag (session only, JSON)
+3. **Project-level** - `.claude/agents/` (current project)
+4. **User-level** - `~/.claude/agents/` (all projects)
+5. **Plugin-level** - Plugin `agents/` directory
 
-This allows CLI definitions to override all other sources for a single session.
+This lets CLI definitions override project, user and plugin definitions for a single session; managed definitions still take precedence.
 
 ---
 
@@ -499,6 +503,7 @@ The `memory` field gives subagents a persistent directory that survives across c
 ```yaml
 ---
 name: researcher
+description: Research assistant that keeps findings in persistent memory across sessions
 memory: user
 ---
 
@@ -525,7 +530,7 @@ graph LR
 
 ## Background Subagents
 
-Subagents run in the background by default (v2.1.198). Claude keeps working on the main conversation while a subagent runs and is notified when it finishes, so you no longer wait on a subagent to return before continuing.
+Subagents run in the background by default (v2.1.198). Since v2.1.302 the desktop app and VS Code also always run the main conversation's subagents in the background; a subagent's own Agent calls in `claude -p`, the Agent SDK, the desktop app and VS Code run in the foreground by default. Claude keeps working on the main conversation while a subagent runs and is notified when it finishes, so you no longer wait on a subagent to return before continuing.
 
 ### Configuration
 
@@ -595,40 +600,44 @@ graph TB
 
 ## Forked Subagents
 
-Forked subagents (`context: fork`) inherit the parent agent's full conversation context at the moment of forking, rather than starting with a clean slate. This is useful for exploring alternative paths without losing the work done so far.
+A forked subagent inherits the parent's whole conversation at the moment of forking — system prompt, tools, model, message history and prompt cache — rather than starting with a clean slate. This is useful for exploring alternative paths without losing the work done so far.
 
-> **Availability**: GA in v2.1.117. **Since v2.1.232, fork mode is on by default in interactive sessions** — on every build, first-party or not. It stays off by default in non-interactive mode (`claude -p`) and in the Agent SDK. On Claude Code older than v2.1.232, or to turn it on where it is off by default, set `CLAUDE_CODE_FORK_SUBAGENT=1`.
+> **Availability**: GA in v2.1.117. **Since v2.1.232, fork mode is on by default in interactive sessions** — on every build, first-party or not. Since v2.1.302 it is also on by default in non-interactive mode (`claude -p`), the Agent SDK, the desktop app and VS Code; `claude mcp serve` never offers fork subagents. On Claude Code older than v2.1.232, or to turn it on where it is off by default, set `CLAUDE_CODE_FORK_SUBAGENT=1`.
 
 > **Fork-mode subagents run in the background.** Where fork mode is on — as it is by default in an interactive session — Claude Code runs the subagent in the background, forked and non-forked subagents alike.
 
 ### Configuration
 
-```yaml
----
-name: alternative-explorer
-description: Explore an alternative implementation path while preserving parent context
-context: fork
-tools: Read, Edit, Bash, Grep, Glob
----
+You don't define a fork in an agent file. Claude starts one through the Agent tool with `subagent_type: "fork"`, or you start one yourself with `/subtask <task>` (v2.1.212+):
 
-You are a forked subagent. You inherit the parent's full conversation and
-may explore an alternative approach. Return your findings and the parent
-will decide whether to adopt them.
+```text
+/subtask Explore an alternative implementation path and report the trade-offs
 ```
+
+A fork can't spawn further forks. To block forks, add the deny rule `Agent(fork)`:
+
+```json
+{
+  "permissions": {
+    "deny": ["Agent(fork)"]
+  }
+}
+```
+
+> **Note**: `context: fork` is a **skill** frontmatter field (see [Skills](../03-skills/README.md)), not a subagent field. Claude Code silently ignores fields it doesn't recognize in an agent definition.
 
 ### Enabling Fork Mode Explicitly
 
-Interactive sessions on v2.1.232+ need no flag. Use this on older versions, in headless
-runs, or in the Agent SDK:
+Set `CLAUDE_CODE_FORK_SUBAGENT=0` to turn fork mode off everywhere. On versions before v2.1.302, set it to `1` to turn forks on in `claude -p` and the Agent SDK.
 
 ```bash
-export CLAUDE_CODE_FORK_SUBAGENT=1
+export CLAUDE_CODE_FORK_SUBAGENT=0
 claude
 ```
 
 ### When to Use Fork vs Clean Context
 
-| Scenario | `context: fork` | Clean context (default) |
+| Scenario | Fork (`subagent_type: "fork"`) | Clean context (default) |
 |----------|-----------------|-------------------------|
 | Explore alternative implementations | Yes | No (would lose context) |
 | Long research with existing context | Yes | No |
@@ -639,7 +648,7 @@ claude
 
 ## Restrict Spawnable Subagents
 
-You can control which subagents a given subagent is allowed to spawn by using the `Agent(agent_type)` syntax in the `tools` field. This provides a way to allowlist specific subagents for delegation.
+You can control which subagents an agent running as the main thread with `claude --agent` is allowed to spawn by using the `Agent(agent_type)` syntax in the `tools` field. This provides a way to allowlist specific subagents for delegation. In a subagent definition, any type list inside the parentheses is ignored.
 
 > **Note**: In v2.1.63, the `Task` tool was renamed to `Agent`. Existing `Task(...)` references still work as aliases.
 
@@ -656,7 +665,7 @@ You are a coordinator agent. You can delegate work to the "worker" and
 "researcher" subagents only. Use Read and Bash for your own exploration.
 ```
 
-In this example, the `coordinator` subagent can only spawn the `worker` and `researcher` subagents. It cannot spawn any other subagents, even if they are defined elsewhere.
+In this example, when you run `claude --agent coordinator`, the main thread can only spawn the `worker` and `researcher` subagents. It cannot spawn any other subagents, even if they are defined elsewhere. If `coordinator` runs as a subagent instead, the type list is ignored.
 
 ---
 
@@ -748,7 +757,7 @@ You can also set the display mode in `settings.json`:
 
 ### Navigation
 
-Use `Shift+Down` to navigate between teammates in split-pane mode.
+To move between teammates, use the up and down arrow keys in the agent panel and press Enter (in-process mode), or click into a teammate's pane (split-pane mode).
 
 ### Team Configuration
 
@@ -951,8 +960,8 @@ graph TB
 
 ### Key Behaviors
 
-- **Nested spawning on by default, depth 3 (v2.1.219)** - Subagents can spawn their own subagents up to three layers below the main conversation. Set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to change the limit, or `1` to turn nesting off. At the depth limit, Claude Code withholds the `Agent` tool from every subagent except a fork. (History: v2.1.172–v2.1.216 nested by default up to 5 layers with no way to change it; v2.1.217 made nesting opt-in at depth 1; v2.1.219 set the default to 3.) Use the `Agent(agent_type)` restriction syntax (see [Restrict Spawnable Subagents](#restrict-spawnable-subagents)) to control which subagents a given subagent may spawn
-- **Background permissions** - Background subagents auto-deny any permissions that are not pre-approved
+- **Nested spawning on by default, depth 3 (v2.1.219)** - Subagents can spawn their own subagents up to three layers below the main conversation. Set `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` to change the limit, or `1` to turn nesting off. At the depth limit, Claude Code withholds the `Agent` tool from every subagent except a fork. (History: v2.1.172–v2.1.216 nested by default up to 5 layers with no way to change it; v2.1.217 made nesting opt-in at depth 1; v2.1.219 set the default to 3.) Use the `Agent(agent_type)` restriction syntax (see [Restrict Spawnable Subagents](#restrict-spawnable-subagents)) to control which subagents a main-thread agent (`claude --agent`) may spawn; inside a subagent the type list is ignored
+- **Background permissions** - When a background subagent needs a permission that is not pre-approved, the prompt appears in your main session and names the subagent that is asking
 - **Backgrounding** - Press `Ctrl+B` to background a currently running task
 - **Transcripts** - Subagent transcripts are stored at `~/.claude/projects/{project}/{sessionId}/subagents/agent-{agentId}.jsonl`
 - **Auto-compaction** - Subagent context auto-compacts at ~95% capacity (override with `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` environment variable)
@@ -1327,8 +1336,8 @@ See the OpenTelemetry section in [Advanced Features → Telemetry](../09-advance
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/sub-agents
 - https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
@@ -1348,4 +1357,6 @@ See the OpenTelemetry section in [Advanced Features → Telemetry](../09-advance
 - https://code.claude.com/docs/en/agent-view
 - https://code.claude.com/docs/en/sub-agents#permission-modes
 - https://code.claude.com/docs/en/sub-agents#available-tools
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/changelog#2-1-302
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

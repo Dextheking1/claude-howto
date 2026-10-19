@@ -43,7 +43,7 @@ sequenceDiagram
     participant Hooks
     participant Tools as Configured Tools
 
-    User->>Claude: /plugin install pr-review
+    User->>Claude: claude --plugin-dir ./07-plugins/pr-review
     Claude->>Plugin: Download plugin manifest
     Plugin-->>Claude: Return plugin definition
     Claude->>Install: Extract components
@@ -100,8 +100,10 @@ my-plugin/
 │   ├── specialist-2.md
 │   └── configs/
 ├── skills/               # Agent Skills với các file SKILL.md
-│   ├── skill-1.md
-│   └── skill-2.md
+│   ├── skill-1/
+│   │   └── SKILL.md
+│   └── skill-2/
+│       └── SKILL.md
 ├── hooks/                # Event handlers trong hooks.json
 │   └── hooks.json
 ├── .mcp.json             # Cấu hình MCP server
@@ -200,7 +202,7 @@ Marketplace chính thức bao gồm các plugin LSP được cấu hình trướ
 |--------|----------|---------------|----------------|
 | `pyright-lsp` | Python | `pyright-langserver` | `pip install pyright` |
 | `typescript-lsp` | TypeScript/JavaScript | `typescript-language-server` | `npm install -g typescript-language-server typescript` |
-| `rust-lsp` | Rust | `rust-analyzer` | Cài đặt qua `rustup component add rust-analyzer` |
+| `rust-analyzer-lsp` | Rust | `rust-analyzer` | Cài đặt qua `rustup component add rust-analyzer` |
 
 #### Khả năng LSP / LSP capabilities
 
@@ -221,10 +223,14 @@ Plugins có thể khai báo các tùy chọn có thể cấu hình bởi ngườ
   "version": "1.0.0",
   "userConfig": {
     "apiKey": {
+      "type": "string",
+      "title": "API key",
       "description": "API key for the service",
       "sensitive": true
     },
     "region": {
+      "type": "string",
+      "title": "Region",
       "description": "Deployment region",
       "default": "us-east-1"
     }
@@ -258,32 +264,37 @@ Thư mục (`~/.claude/plugins/data/<id>/`) được tạo lần đầu tiên kh
 
 ## Plugin Inline qua Settings (`source: 'settings'`) (v2.1.80+)
 
-Plugins có thể được định nghĩa inline trong các file settings như các mục marketplace sử dụng trường `source: 'settings'`. Điều này cho phép nhúng định nghĩa plugin trực tiếp mà không cần repository hoặc marketplace riêng:
+Plugins có thể được định nghĩa inline trong các file settings như các mục marketplace sử dụng trường `source: 'settings'`. Điều này cho phép nhúng định nghĩa plugin trực tiếp mà không cần repository hoặc marketplace riêng. Khai báo nó trong `extraKnownMarketplaces.<name>.source`; `name` phải trùng với key của marketplace, và các plugin của nó phải tham chiếu nguồn bên ngoài như GitHub hoặc npm (đường dẫn tương đối bị từ chối):
 
 ```json
 {
-  "pluginMarketplaces": [
-    {
-      "name": "inline-tools",
-      "source": "settings",
-      "plugins": [
-        {
-          "name": "quick-lint",
-          "source": "./local-plugins/quick-lint"
-        }
-      ]
+  "extraKnownMarketplaces": {
+    "inline-tools": {
+      "source": {
+        "source": "settings",
+        "name": "inline-tools",
+        "plugins": [
+          {
+            "name": "quick-lint",
+            "source": {
+              "source": "github",
+              "repo": "my-org/quick-lint"
+            }
+          }
+        ]
+      }
     }
-  ]
+  }
 }
 ```
 
 ## Cài Đặt Plugin / Plugin Settings
 
-Plugins có thể gửi một file `settings.json` để cung cấp cấu hình mặc định. Điều này hiện hỗ trợ key `agent`, thiết lập agent luồng chính cho plugin:
+Plugins có thể gửi một file `settings.json` để cung cấp cấu hình mặc định. Hai key có hiệu lực là `agent` và `subagentStatusLine`; mọi key khác bị bỏ qua. `agent` nhận tên của một agent trong plugin và chạy nó làm luồng chính:
 
 ```json
 {
-  "agent": "agents/specialist-1.md"
+  "agent": "specialist-1"
 }
 ```
 
@@ -357,7 +368,7 @@ Chuyên về việc tìm các lỗ hổng bảo mật:
 **Cài Đặt:**
 
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 
 # Result:
 # ✅ 3 slash commands installed
@@ -457,9 +468,9 @@ Người dùng enterprise và nâng cao có thể kiểm soát hành vi marketpl
 |---------|-------------|
 | `extraKnownMarketplaces` | Thêm các nguồn marketplace bổ sung ngoài mặc định |
 | `strictKnownMarketplaces` | Kiểm soát marketplace nào người dùng được phép thêm |
-| `deniedPlugins` | Blocklist do quản trị viên quản lý để ngăn cài đặt các plugin cụ thể |
+| `enabledPlugins` (đặt `false`) | Chặn một plugin cụ thể: `"enabledPlugins": { "<plugin>@<marketplace>": false }` trong managed settings chặn cài đặt ở mọi phạm vi và ẩn plugin khỏi marketplace |
 
-> **Bí danh thân thiện hơn (v2.1.232)**: `additionalMarketplaces` được chấp nhận như bí danh của `extraKnownMarketplaces`, và `allowedMarketplaces` của `strictKnownMarketplaces`. **Nguồn changelog** — changelog v2.1.232 công bố chúng, nhưng trang settings chính thức chưa liệt kê. Các khóa chuẩn vẫn an toàn để tiếp tục dùng.
+> **Bí danh thân thiện hơn (v2.1.232)**: `additionalMarketplaces` được chấp nhận như bí danh của `extraKnownMarketplaces`, và `allowedMarketplaces` của `strictKnownMarketplaces`. Trang settings chính thức liệt kê cả hai tại [Marketplace key aliases](https://code.claude.com/docs/en/settings-reference#marketplace-key-aliases). Các phiên bản cũ hơn bỏ qua bí danh, nên các khóa chuẩn vẫn an toàn để tiếp tục dùng.
 
 > **Ký tự đại diện theo owner (v2.1.223+)**: một mục `"owner/*"` cho phép hoặc chặn mọi repo marketplace thuộc một owner GitHub. **Chỉ được chấp nhận trong `strictKnownMarketplaces` và `blockedMarketplaces`.** Ở mọi nơi khác dùng nguồn `github` — kể cả `extraKnownMarketplaces` và `/plugin marketplace add` — giá trị `repo` phải chỉ đúng một repository.
 
@@ -476,14 +487,14 @@ Plugin marketplaces được định nghĩa trong `.claude-plugin/marketplace.js
 ```json
 {
   "name": "my-team-plugins",
-  "owner": "my-org",
+  "owner": { "name": "my-org" },
   "plugins": [
     {
       "name": "code-standards",
       "source": "./plugins/code-standards",
       "description": "Enforce team coding standards",
       "version": "1.2.0",
-      "author": "platform-team"
+      "author": { "name": "platform-team" }
     },
     {
       "name": "deploy-helper",
@@ -501,13 +512,13 @@ Plugin marketplaces được định nghĩa trong `.claude-plugin/marketplace.js
 | Trường | Bắt Buộc | Mô Tả |
 |-------|----------|-------------|
 | `name` | Có | Tên marketplace trong kebab-case |
-| `owner` | Có | Tổ chức hoặc người dùng duy trì marketplace |
+| `owner` | Có | Tổ chức hoặc người dùng duy trì marketplace: một object với `name` bắt buộc (`email`, `url` tùy chọn) |
 | `plugins` | Có | Mảng các mục plugin |
 | `plugins[].name` | Có | Tên plugin (kebab-case) |
 | `plugins[].source` | Có | Nguồn plugin (chuỗi đường dẫn hoặc object nguồn) |
 | `plugins[].description` | Không | Mô tả plugin ngắn |
 | `plugins[].version` | Không | Chuỗi phiên bản semantic |
-| `plugins[].author` | Không | Tên tác giả plugin |
+| `plugins[].author` | Không | Tác giả plugin: một object với `name` bắt buộc (`email`, `url` tùy chọn) |
 
 ### Các loại nguồn plugin / Plugin source types
 
@@ -520,7 +531,6 @@ Plugins có thể được sourced từ nhiều vị trí:
 | **Git URL** | `{ "source": "url", "url": "..." }` | `{ "source": "url", "url": "https://git.internal/plugin.git" }` |
 | **Git subdirectory** | `{ "source": "git-subdir", "url": "...", "path": "..." }` | `{ "source": "git-subdir", "url": "https://github.com/org/monorepo.git", "path": "packages/plugin" }` |
 | **npm** | `{ "source": "npm", "package": "..." }` | `{ "source": "npm", "package": "@acme/claude-plugin", "version": "^2.0" }` |
-| **pip** | `{ "source": "pip", "package": "..." }` | `{ "source": "pip", "package": "claude-data-plugin", "version": ">=1.0" }` |
 
 Các nguồn GitHub và git hỗ trợ các trường tùy chọn `ref` (nhánh/tag) và `sha` (hash commit) để version pinning.
 
@@ -539,7 +549,7 @@ Các nguồn GitHub và git hỗ trợ các trường tùy chọn `ref` (nhánh/
 
 **Repository riêng tư**: Được hỗ trợ qua các git credential helpers hoặc token môi trường. Người dùng phải có quyền truy cập đọc đến repository.
 
-**Nộp marketplace chính thức**: Gửi plugins đến marketplace do Anthropic quản lý để phân phối rộng hơn.
+**Nộp vào thư mục của Anthropic**: Gửi plugins đến thư mục (directory) của Anthropic để phân phối rộng hơn qua cổng nhà phát triển [claude.ai/directory/manage](https://claude.ai/directory/manage). Marketplace chính thức `claude-plugins-official` không nhận bài nộp qua cổng này.
 
 ### Chế độ nghiêm ngặt / Strict mode
 
@@ -556,13 +566,13 @@ Kiểm soát cách các định nghĩa marketplace tương tác với các file 
 |-------|--------|
 | Không được đặt | Không có hạn chế — người dùng có thể thêm bất kỳ marketplace nào |
 | Mảng rỗng `[]` | Khóa — không cho phép marketplaces |
-| Mảng các mẫu | Allowlist — chỉ các marketplaces khớp có thể được thêm |
+| Mảng các đối tượng nguồn | Allowlist — chỉ các marketplaces khớp có thể được thêm |
 
 ```json
 {
   "strictKnownMarketplaces": [
-    "my-org/*",
-    "github.com/trusted-vendor/*"
+    { "source": "github", "repo": "my-org/*" },
+    { "source": "github", "repo": "trusted-vendor/*" }
   ]
 }
 ```
@@ -713,12 +723,12 @@ Các quản trị viên có thể kiểm soát hành vi plugin trên một tổ 
 | Cài Đặt | Mô Tả |
 |---------|-------------|
 | `enabledPlugins` | Allowlist của các plugin được kích hoạt theo mặc định |
-| `deniedPlugins` | Blocklist của các plugin không thể được cài đặt |
+| `enabledPlugins` (đặt `false`) | Chặn một plugin cụ thể: `"enabledPlugins": { "<plugin>@<marketplace>": false }` trong managed settings chặn cài đặt ở mọi phạm vi và ẩn plugin khỏi marketplace |
 | `extraKnownMarketplaces` | Thêm các nguồn marketplace bổ sung ngoài mặc định |
 | `strictKnownMarketplaces` | Hạn chế marketplace nào người dùng được phép thêm |
-| `allowedChannelPlugins` | Kiểm soát plugins nào được phép theo kênh phát hành |
+| `allowedChannelPlugins` | Allowlist các plugin [channel](https://code.claude.com/docs/en/channels) được phép đẩy tin nhắn vào phiên (mỗi mục gồm `marketplace` và `plugin`) |
 
-> **Bí danh thân thiện hơn (v2.1.232)**: `additionalMarketplaces` được chấp nhận như bí danh của `extraKnownMarketplaces`, và `allowedMarketplaces` của `strictKnownMarketplaces`. **Nguồn changelog** — changelog v2.1.232 công bố chúng, nhưng trang settings chính thức chưa liệt kê. Các khóa chuẩn vẫn an toàn để tiếp tục dùng.
+> **Bí danh thân thiện hơn (v2.1.232)**: `additionalMarketplaces` được chấp nhận như bí danh của `extraKnownMarketplaces`, và `allowedMarketplaces` của `strictKnownMarketplaces`. Trang settings chính thức liệt kê cả hai tại [Marketplace key aliases](https://code.claude.com/docs/en/settings-reference#marketplace-key-aliases). Các phiên bản cũ hơn bỏ qua bí danh, nên các khóa chuẩn vẫn an toàn để tiếp tục dùng.
 
 > **Ký tự đại diện theo owner (v2.1.223+)**: một mục `"owner/*"` cho phép hoặc chặn mọi repo marketplace thuộc một owner GitHub. **Chỉ được chấp nhận trong `strictKnownMarketplaces` và `blockedMarketplaces`.** Ở mọi nơi khác dùng nguồn `github` — kể cả `extraKnownMarketplaces` và `/plugin marketplace add` — giá trị `repo` phải chỉ đúng một repository.
 
@@ -726,13 +736,14 @@ Các cài đặt này có thể được áp dụng ở cấp tổ chức qua c�
 
 ## Bảo Mật Plugin / Plugin Security
 
-Các subagent plugin chạy trong một sandbox bị hạn chế. Các key frontmatter sau **không được phép** trong định nghĩa subagent plugin:
+Các subagent plugin **bỏ qua** các key frontmatter sau (agent vẫn được tải; các key này không có tác dụng):
 
 - `hooks` -- Subagents không thể đăng ký event handlers
 - `mcpServers` -- Subagents không thể cấu hình MCP servers
 - `permissionMode` -- Subagents không thể ghi đè mô hình quyền
+- `initialPrompt` -- Plugin agents không thể tự động gửi prompt đầu tiên
 
-Điều này đảm bảo rằng plugins không thể leo thang đặc quyền hoặc sửa đổi môi trường host vượt quá phạm vi được khai báo của chúng.
+Một file agent không thể tự thêm hooks hoặc MCP servers; hãy cung cấp chúng dưới dạng hooks và MCP servers cấp plugin.
 
 ## Xuất Bản Một Plugin / Publishing a Plugin
 
@@ -749,7 +760,7 @@ Các subagent plugin chạy trong một sandbox bị hạn chế. Các key front
 
 **Ví dụ gửi:**
 
-```markdown
+````markdown
 # PR Review Plugin
 
 ## Mô Tả
@@ -763,7 +774,7 @@ Workflow PR review hoàn chỉnh với các kiểm tra bảo mật, testing, và
 
 ## Cài Đặt
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ## Tính Năng
@@ -784,7 +795,7 @@ Workflow PR review hoàn chỉnh với các kiểm tra bảo mật, testing, và
 - Claude Code 2.1+
 - Truy cập GitHub
 - CodeQL (tùy chọn)
-```
+````
 
 ## Plugin vs Cấu Hình Thủ Công / Plugin vs Manual Configuration
 
@@ -798,7 +809,7 @@ Workflow PR review hoàn chỉnh với các kiểm tra bảo mật, testing, và
 
 **Với Plugin (2 phút):**
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 # ✅ Mọi thứ được cài đặt và cấu hình
 # ✅ Sẵn sàng sử dụng ngay lập tức
 # ✅ Nhóm có thể tái sản xuất thiết lập chính xác
@@ -834,15 +845,12 @@ Workflow PR review hoàn chỉnh với các kiểm tra bảo mật, testing, và
 
 ### Cài Đặt Từ Marketplace
 
-1. **Duyệt các plugins có sẵn:**
+1. **Duyệt các plugins có sẵn** (tab **Discover** liệt kê plugin từ các marketplace của bạn; `/plugin list` chỉ hiển thị plugin đã cài):
    ```bash
-   /plugin list
+   /plugin
    ```
 
-2. **Xem chi tiết plugin:**
-   ```bash
-   claude plugin details plugin-name
-   ```
+2. **Xem chi tiết plugin:** chọn plugin trong tab **Discover** để mở chi tiết. (`claude plugin details plugin-name` chỉ hoạt động khi plugin đã được tải: đã cài, hoặc truyền qua `--plugin-dir`.)
 
 3. **Cài đặt một plugin:**
    ```bash
@@ -852,7 +860,8 @@ Workflow PR review hoàn chỉnh với các kiểm tra bảo mật, testing, và
 ### Cài Đặt Từ Đường Dẫn Cục Bộ
 
 ```bash
-/plugin install ./path/to/plugin-directory
+# /plugin install cần name@marketplace; truyền đường dẫn sẽ báo lỗi "marketplace not found"
+claude --plugin-dir ./path/to/plugin-directory
 ```
 
 ### Cài Đặt Từ GitHub
@@ -930,7 +939,7 @@ Các tính năng Claude Code sau hoạt động cùng với plugins:
 ## Xử Lý Sự Cố / Troubleshooting
 
 ### Plugin Won't Install
-- Kiểm tra tính tương thích phiên bản Claude Code: `/version`
+- Kiểm tra tính tương thích phiên bản Claude Code: `claude --version`
 - Xác minh cú pháp `plugin.json` với một trình xác thực JSON
 - Kiểm tra kết nối internet (cho plugins từ xa)
 - Review quyền: `ls -la plugin/`
@@ -944,7 +953,7 @@ Các tính năng Claude Code sau hoạt động cùng với plugins:
 ### MCP Connection Failed
 - Xác minh các biến môi trường được đặt đúng
 - Kiểm tra cài đặt và sức khỏe MCP server
-- Test kết nối MCP độc lập với `/mcp test`
+- Kiểm tra trạng thái MCP server bằng `/mcp`
 - Review cấu hình MCP trong thư mục `mcp/`
 
 ### Commands Not Available After Install
@@ -971,12 +980,17 @@ Các tính năng Claude Code sau hoạt động cùng với plugins:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/discover-plugins
 - https://code.claude.com/docs/en/plugins-reference
 - https://code.claude.com/docs/en/settings
 - https://code.claude.com/docs/en/plugins/install
 - https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/manifest-reference
+- https://code.claude.com/docs/en/plugins/marketplace-reference
+- https://code.claude.com/docs/en/plugins/components
+- https://code.claude.com/docs/en/plugins/publish
+- https://code.claude.com/docs/en/plugins/overview
 **Các Mô Hình Tương Thích**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

@@ -110,7 +110,7 @@ chmod +x ~/.claude/hooks/*.sh
 # plan           - Лише аналіз, без змін (тільки читання)
 # dontAsk        - Лише попередньо затверджені інструменти; решта відхиляється
 # auto           - Фоновий класифікатор вирішує автоматично
-# bypassPermissions - Приймати все (потребує --dangerously-skip-permissions)
+# bypassPermissions - Приймати все (--permission-mode bypassPermissions; --dangerously-skip-permissions є еквівалентом)
 
 # Управління сесіями
 /resume                # Відновити попередню розмову
@@ -286,15 +286,15 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Запускати команду кожні 5 хвилин
 /loop 5m /check-status
 
-# Одноразове нагадування
-/loop 30m "remind me to check the deploy"
+# Одноразове нагадування: попросіть звичайними словами (/loop повторюється, доки його не скасують)
+нагадай мені через 30 хвилин перевірити деплой
 ```
 
 ---
 
 ## 📁 Довідник розташування файлів
 
-```
+```text
 Ваш проект/
 ├── .claude/
 │   ├── commands/              # Слеш-команди тут
@@ -314,9 +314,12 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 │   ├── skills/                # Персональні навички
 │   ├── hooks/                 # Скрипти хуків
 │   ├── settings.json          # Налаштування користувача
-│   ├── managed-settings.d/    # Керовані налаштування (enterprise/org)
 │   └── CLAUDE.md              # Персональна пам'ять
 └── .claude.json               # Персональна конфігурація MCP (рівень користувача)
+
+Системний каталог/             # macOS /Library/Application Support/ClaudeCode/, Linux /etc/claude-code/, Windows C:\Program Files\ClaudeCode\
+├── managed-settings.json      # Керовані налаштування (enterprise/org)
+└── managed-settings.d/        # Додаткові файли керованих налаштувань
 ```
 
 ---
@@ -430,7 +433,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 | **Список завдань** | Управління фоновими завданнями | `/tasks` (псевдонім `/bashes`) |
 | **Автопам'ять** | Автоматичне збереження з розмов | Claude зберігає нотатки в `~/.claude/projects/<project>/memory/MEMORY.md`; керування через `/memory` |
 | **Git Worktrees** | Ізольовані робочі простори для паралельної розробки | `claude --worktree <name>` (або `-w`) |
-| **Вибір моделі** | Перемикання між Fable 5.1, Fable 5, Opus 5, Sonnet 5, Sonnet 4.6, Opus 4.8 та Haiku 4.5 | `/model` або прапорець `--model` |
+| **Вибір моделі** | Перемикання між Fable 5.1, Fable 5, Opus 5, Sonnet 5.5, Sonnet 5, Sonnet 4.6, Opus 4.8 та Haiku 4.5 | `/model` або прапорець `--model` (`sonnet` на Anthropic API вказує на Sonnet 5.5, v2.1.284+) |
 | **Команди агентів** | Координація кількох агентів | Увімкнути з `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (експериментально) |
 | **Заплановані завдання** | Повторювані завдання з `/loop` | `/loop 5m /command` або CronCreate |
 | **Інтеграція з Chrome** | Автоматизація браузера | Прапорець `--chrome` або `/chrome` |
@@ -541,8 +544,8 @@ echo $GITHUB_TOKEN
 
 ---
 
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/commands
@@ -550,3 +553,7 @@ echo $GITHUB_TOKEN
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/agent-teams
 - https://code.claude.com/docs/en/memory#storage-location
+- https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/managed-settings
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/model-config

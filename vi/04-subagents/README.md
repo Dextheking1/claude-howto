@@ -69,10 +69,11 @@ Files tác nhân con có thể được lưu trữ ở nhiều vị trí với c
 
 | Ưu Tiên | Loại | Vị Trí | Phạm Vi |
 |----------|------|----------|-------|
-| 1 (cao nhất) | **Được định nghĩa qua CLI** | Qua cờ `--agents` (JSON) | Chỉ phiên |
-| 2 | **Tác nhân dự án** | `.claude/agents/` | Dự án hiện tại |
-| 3 | **Tác nhân người dùng** | `~/.claude/agents/` | Tất cả dự án |
-| 4 (thấp nhất) | **Tác nhân plugin** | Thư mục `agents/` của plugin | Qua plugins |
+| 1 (cao nhất) | **Được quản lý (managed)** | Managed settings | Toàn tổ chức |
+| 2 | **Được định nghĩa qua CLI** | Qua cờ `--agents` (JSON) | Chỉ phiên |
+| 3 | **Tác nhân dự án** | `.claude/agents/` | Dự án hiện tại |
+| 4 | **Tác nhân người dùng** | `~/.claude/agents/` | Tất cả dự án |
+| 5 (thấp nhất) | **Tác nhân plugin** | Thư mục `agents/` của plugin | Qua plugins |
 
 Khi tên trùng lặp tồn tại, nguồn ưu tiên cao hơn sẽ được ưu tiên.
 
@@ -119,7 +120,7 @@ của tác nhân con để giải quyết vấn đề.
 |-------|----------|-------------|
 | `name` | Có | Định danh duy nhất (chữ thường và dấu gạch ngang) |
 | `description` | Có | Mô tả ngôn ngữ của mục đích. Bao gồm "use PROACTIVELY" để khuyến khích gọi tự động |
-| `tools` | Không | Danh sách phân tách bằng dấu phẩy của các công cụ cụ thể. Bỏ qua để kế thừa tất cả công cụ. Hỗ trợ cú pháp `Agent(agent_name)` để hạn chế tác nhân con có thể tạo. MCP: `mcp__<server>__*` cấp quyền cho toàn bộ một server (v2.1.299+: chỉ khớp đúng tên server đó). |
+| `tools` | Không | Danh sách phân tách bằng dấu phẩy của các công cụ cụ thể. Bỏ qua để kế thừa tất cả công cụ. Hỗ trợ cú pháp `Agent(agent_name)` để hạn chế tác nhân con có thể tạo khi tác nhân chạy như luồng chính với `claude --agent`; bên trong một tác nhân con, danh sách loại bị bỏ qua. MCP: `mcp__<server>__*` cấp quyền cho toàn bộ một server (v2.1.299+: chỉ khớp đúng tên server đó). |
 | `disallowedTools` | Không | Danh sách phân tách bằng dấu phẩy của các công cụ mà tác nhân con không được sử dụng |
 | `model` | Không | Mô hình để sử dụng: `sonnet`, `opus`, `haiku`, ID mô hình đầy đủ, hoặc `inherit`. Mặc định là mô hình tác nhân con được cấu hình |
 | `permissionMode` | Không | `default` (chế độ Manual; `manual` được chấp nhận như bí danh từ v2.1.200), `acceptEdits`, `dontAsk`, `bypassPermissions`, `plan`, `auto`. Khi tác nhân cha chạy ở `bypassPermissions`, `acceptEdits` hoặc `auto`, `permissionMode` của tác nhân con bị bỏ qua |
@@ -192,12 +193,13 @@ claude --agents '{
 **Ưu Tiên Định Nghĩa Tác Nhân:**
 
 Các định nghĩa tác nhân được tải với thứ tự ưu tiên này (khớp đầu tiên thắng):
-1. **Được định nghĩa qua CLI** - cờ `--agents` (phiên chỉ, JSON)
-2. **Cấp dự án** - `.claude/agents/` (dự án hiện tại)
-3. **Cấp người dùng** - `~/.claude/agents/` (tất cả dự án)
-4. **Cấp plugin** - Thư mục `agents/` của plugin
+1. **Được quản lý (managed)** - managed settings (toàn tổ chức)
+2. **Được định nghĩa qua CLI** - cờ `--agents` (phiên chỉ, JSON)
+3. **Cấp dự án** - `.claude/agents/` (dự án hiện tại)
+4. **Cấp người dùng** - `~/.claude/agents/` (tất cả dự án)
+5. **Cấp plugin** - Thư mục `agents/` của plugin
 
-Điều này cho phép định nghĩa CLI ghi đè tất cả các nguồn khác cho một phiên duy nhất.
+Điều này cho phép định nghĩa CLI ghi đè các định nghĩa cấp dự án, người dùng và plugin cho một phiên duy nhất; định nghĩa được quản lý (managed) vẫn được ưu tiên hơn.
 
 ---
 
@@ -428,6 +430,7 @@ Trường `memory` cung cấp cho tác nhân con một thư mục liên tục t�
 ```yaml
 ---
 name: researcher
+description: Research assistant that keeps findings in persistent memory across sessions
 memory: user
 ---
 
@@ -524,7 +527,7 @@ graph TB
 
 ## Hạn Chế Tác Nhân Con Có Thể Tạo
 
-Bạn có thể kiểm soát các tác nhân con mà một tác nhân con cho phép tạo bằng cách sử dụng cú pháp `Agent(agent_type)` trong trường `tools`. Điều này cung cấp một cách để cho phép danh sách các tác nhân con cụ thể cho ủy quyền.
+Bạn có thể kiểm soát các tác nhân con mà một tác nhân chạy như luồng chính với `claude --agent` được phép tạo bằng cách sử dụng cú pháp `Agent(agent_type)` trong trường `tools`. Điều này cung cấp một cách để cho phép danh sách các tác nhân con cụ thể cho ủy quyền. Trong định nghĩa tác nhân con, mọi danh sách loại trong dấu ngoặc đều bị bỏ qua.
 
 > **Lưu ý**: Trong v2.1.63, công cụ `Task` đã được đổi tên thành `Agent`. Các tham chiếu `Task(...)` hiện có vẫn hoạt động như bí danh.
 
@@ -541,7 +544,7 @@ You are a coordinator agent. You can delegate work to the "worker" and
 "researcher" subagents only. Use Read and Bash for your own exploration.
 ```
 
-Trong ví dụ này, tác nhân con `coordinator` chỉ có thể tạo các tác nhân con `worker` và `researcher`. Nó không thể tạo bất kỳ tác nhân con nào khác, ngay cả khi chúng được định nghĩa ở nơi khác.
+Trong ví dụ này, khi bạn chạy `claude --agent coordinator`, luồng chính chỉ có thể tạo các tác nhân con `worker` và `researcher`. Nó không thể tạo bất kỳ tác nhân con nào khác, ngay cả khi chúng được định nghĩa ở nơi khác. Nếu `coordinator` chạy như một tác nhân con, danh sách loại bị bỏ qua.
 
 ---
 
@@ -632,7 +635,7 @@ Bạn cũng có thể đặt chế độ hiển thị trong `settings.json`:
 
 ### Điều hướng
 
-Sử dụng `Shift+Down` để điều hướng giữa các đồng nghiệp trong chế độ split-pane.
+Để di chuyển giữa các đồng nghiệp, dùng phím mũi tên lên/xuống trong bảng agent rồi nhấn Enter (chế độ in-process), hoặc nhấp vào pane của đồng nghiệp (chế độ split-pane).
 
 ### Cấu hình đội
 
@@ -812,7 +815,7 @@ graph TB
 ### Hành Vi Chính
 
 - **Không tạo lồng nhau** - Tác nhân con không thể tạo các tác nhân con khác
-- **Quyền nền** - Tác nhân con nền tự động từ chối bất kỳ quyền nào không được phê duyệt trước
+- **Quyền nền** - Khi tác nhân con nền cần một quyền chưa được phê duyệt trước, lời nhắc xuất hiện trong phiên chính và nêu tên tác nhân con đang yêu cầu
 - **Chạy nền** - Nhấn `Ctrl+B` để chạy nền một tác vụ đang chạy
 - **Bản ghi** - Bản ghi tác nhân con được lưu tại `~/.claude/projects/{project}/{sessionId}/subagents/agent-{agentId}.jsonl`
 - **Tự động nén** - Bối cảnh tác nhân con tự động nén ở ~95% dung lượng (ghi đè qua biến môi trường `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`)
@@ -1127,8 +1130,8 @@ graph TD
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/sub-agents
 - https://code.claude.com/docs/en/commands
@@ -1138,4 +1141,7 @@ graph TD
 - https://code.claude.com/docs/en/agent-view
 - https://code.claude.com/docs/en/sub-agents#permission-modes
 - https://code.claude.com/docs/en/sub-agents#available-tools
+- https://code.claude.com/docs/en/agent-teams
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/changelog#2-1-302
 **Các Mô Hình Tương Thích**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

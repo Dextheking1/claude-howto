@@ -97,7 +97,7 @@ graph TD
 
 | Step | Feature | Complexity | Time | Level | Dependencies | Why Learn This | Key Benefits |
 |------|---------|-----------|------|-------|--------------|----------------|--------------|
-| **1** | [Slash Commands](01-slash-commands/) | ⭐ Beginner | 30 min | Level 1 | None | Quick productivity wins (60+ built-in + 10 bundled skills) | Instant automation, team standards |
+| **1** | [Slash Commands](01-slash-commands/) | ⭐ Beginner | 30 min | Level 1 | None | Quick productivity wins (60+ built-in + 20 bundled skills) | Instant automation, team standards |
 | **2** | [Memory](02-memory/) | ⭐⭐ Beginner+ | 45 min | Level 1 | None | Essential for all features | Persistent context, preferences |
 | **3** | [Checkpoints](08-checkpoints/) | ⭐⭐ Intermediate | 45 min | Level 1 | Session management | Safe exploration | Experimentation, recovery |
 | **4** | [CLI Basics](10-cli/) | ⭐⭐ Beginner+ | 30 min | Level 1 | None | Core CLI usage | Interactive & print mode |
@@ -302,8 +302,7 @@ chmod +x ~/.claude/hooks/pre-tool-check.sh
 
 ```bash
 # Exercise 1: Set up GitHub MCP
-export GITHUB_TOKEN="your_github_token"
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Exercise 2: Test MCP integration
 # In Claude Code: /mcp__github__list_prs
@@ -370,7 +369,7 @@ Before starting Level 3, make sure you're comfortable with these Level 2 concept
 ✅ Background task management
 ✅ Auto Memory for learned preferences
 ✅ Auto Mode with background safety classifier
-✅ Channels for structured multi-session workflows
+✅ Channels that push events (CI results, chat messages, webhooks) into a running session
 ✅ Voice Dictation for hands-free interaction
 ✅ Remote control (generally available — your machine appears as a device card in the Claude app), desktop app, and web sessions
 ✅ Agent Teams for multi-agent collaboration
@@ -406,10 +405,10 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Exercise 7: Scheduled tasks
 /loop 5m /check-status
-# Or use CronCreate for persistent scheduled tasks
+# Tasks are session-scoped; for persistent scheduling use Routines or Desktop scheduled tasks
 
-# Exercise 8: Channels for multi-session workflows
-# Use channels to organize work across sessions
+# Exercise 8: Channels (research preview)
+# A channel is an MCP server that pushes events into your running session
 
 # Exercise 9: Voice Dictation
 # Use voice input for hands-free interaction with Claude Code
@@ -421,7 +420,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 - [ ] Toggled extended thinking with Alt+T / Option+T
 - [ ] Used auto mode with background safety classifier
 - [ ] Used background tasks for long operations
-- [ ] Explored Channels for multi-session workflows
+- [ ] Explored Channels that push external events into a session
 - [ ] Tried Voice Dictation for hands-free input
 - [ ] Understand Remote Control, Desktop App, and Web sessions
 - [ ] Used `notify_when_idle` on a cross-session `SendMessage` to be told when another session goes idle
@@ -453,7 +452,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 ```bash
 # Exercise 1: Install a complete plugin
-# In Claude Code: /plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review  # from the repo root
 
 # Exercise 2: Print mode for CI/CD
 claude -p "Run all tests and generate report"
@@ -699,14 +698,14 @@ Once you've completed all milestones:
 
 1. **Create team documentation** - Document your team's Claude Code setup
 2. **Build custom plugins** - Package your team's workflows, including the newer manifest fields (`workflows`, `channels`, `dependencies`)
-3. **Try `/design`** - Sketch a UI mockup, screen flow, or landing page on a design canvas instead of hand-writing HTML (research preview, v2.1.233+)
-4. **Explore Remote Control** - Control Claude Code sessions programmatically from external tools, or start one from your phone via its device card in the Claude app
+3. **Try `/design`** - Sketch a UI mockup, screen flow, or landing page on a design canvas instead of hand-writing HTML (v2.1.265+)
+4. **Explore Remote Control** - Continue a local Claude Code session from your phone, browser or the Claude app, or start one from your phone via its device card in the Claude app
 5. **Try Web Sessions** - Use Claude Code through browser-based interfaces for remote development
 6. **Use the Desktop App** - Access Claude Code features through the native desktop application
 7. **Use Auto Mode** - Let Claude work autonomously with a background safety classifier
 8. **Leverage Auto Memory** - Let Claude learn your preferences automatically over time
 9. **Set up Agent Teams** - Coordinate multiple agents on complex, multi-faceted tasks
-10. **Use Channels** - Organize work across structured multi-session workflows
+10. **Use Channels** - Connect an MCP server that pushes events (CI results, chat messages, webhooks) into your running session
 11. **Try Voice Dictation** - Use hands-free voice input for interaction with Claude Code
 12. **Use Scheduled Tasks** - Automate recurring checks with `/loop` and cron tools
 13. **Contribute examples** - Share with the community
@@ -740,8 +739,8 @@ Once you've completed all milestones:
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/overview
 - https://code.claude.com/docs/en/hooks
@@ -750,6 +749,12 @@ Once you've completed all milestones:
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.145
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/agent-teams
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/channels
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/sub-agents
 **Compatible Models**: Claude Fable 5.1, Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
 **Maintained by**: Claude How-To Contributors

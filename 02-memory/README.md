@@ -101,7 +101,7 @@ Remember that we always use TypeScript strict mode in this project.
 Please add to memory: prefer async/await over promise chains.
 ```
 
-Claude will update the appropriate CLAUDE.md file based on your request.
+Asking Claude to remember something saves it to auto memory. To change CLAUDE.md instead, say "add this to CLAUDE.md", or edit the file yourself with `/memory`.
 
 **Historical reference** (no longer functional):
 
@@ -312,13 +312,13 @@ In large monorepos, some CLAUDE.md files may be irrelevant to your current work.
 // In ~/.claude/settings.json or .claude/settings.json
 {
   "claudeMdExcludes": [
-    "packages/legacy-app/CLAUDE.md",
-    "vendors/**/CLAUDE.md"
+    "**/packages/legacy-app/CLAUDE.md",
+    "**/vendors/**/CLAUDE.md"
   ]
 }
 ```
 
-Patterns are matched against paths relative to the project root. This is particularly useful for:
+Patterns are matched against absolute file paths using glob syntax, so start repo-relative patterns with `**/`. This is particularly useful for:
 
 - Monorepos with many sub-projects, where only some are relevant
 - Repositories that contain vendored or third-party CLAUDE.md files
@@ -354,7 +354,7 @@ These platform-native mechanisms are read alongside JSON settings files and foll
 
 | Setting | Type | Default | Description |
 |---------|------|---------|-------------|
-| `cleanupPeriodDays` | integer (days) | 30 | Retention window for on-disk artifacts. **As of v2.1.117**, it applies to all four of: checkpoints (`~/.claude/checkpoints/`), tasks (`~/.claude/tasks/`), shell-snapshots (`~/.claude/shell-snapshots/`), and backups (`~/.claude/backups/`). Files older than the window are pruned at startup. |
+| `cleanupPeriodDays` | integer (days) | 30 | Retention window for session transcripts and other application data under `~/.claude/`, including `file-history/` (checkpoint snapshots), `plans/`, `debug/`, `tasks/`, `shell-snapshots/`, and `backups/`. There is no `~/.claude/checkpoints/` folder. Files older than the window are pruned at startup. |
 
 ```jsonc
 // ~/.claude/settings.json
@@ -367,25 +367,27 @@ These platform-native mechanisms are read alongside JSON settings files and foll
 
 | Setting | Type | Description |
 |---------|------|-------------|
-| `attribution.commit` | boolean | Adds the `Co-Authored-By: Claude` trailer to commits Claude creates. Replaces the deprecated `includeCoAuthoredBy` flag. |
-| `attribution.pr` | boolean | Adds Claude attribution to pull request descriptions. Replaces the deprecated `includeCoAuthoredBy` flag for PRs. |
+| `attribution.commit` | string | Text appended to commits Claude creates (by default, the `Co-Authored-By: Claude` trailer); `""` hides it. Replaces the deprecated `includeCoAuthoredBy` flag. |
+| `attribution.pr` | string | Text appended to pull request descriptions Claude creates; `""` hides it. Replaces the deprecated `includeCoAuthoredBy` flag for PRs. |
 | `attribution.sessionUrl` | boolean | Omit the claude.ai session link from commits and PRs created in web and Remote Control sessions (v2.1.183+). |
 | `voice.enabled` | boolean | Enables push-to-talk voice dictation (`/voice`). Replaces the deprecated `voiceEnabled` flag. |
-| `prUrlTemplate` | string | **New in v2.1.119.** Custom URL template for the footer PR badge; useful for GitLab, Bitbucket, or internal code-review platforms. Supports `{{owner}}`, `{{repo}}`, and `{{number}}` placeholders. |
+| `prUrlTemplate` | string | **New in v2.1.119.** Custom URL template for the footer PR badge; useful for GitLab, Bitbucket, or internal code-review platforms. Supports `{host}`, `{owner}`, `{repo}`, `{number}`, and `{url}` placeholders; GitLab merge request links stay unchanged. |
 
 ```jsonc
 // ~/.claude/settings.json
 {
   "attribution": {
-    "commit": false,
-    "pr": true
+    "commit": "",
+    "pr": ""
   },
   "voice": {
     "enabled": true
   },
-  "prUrlTemplate": "https://gitlab.internal/{{owner}}/{{repo}}/-/merge_requests/{{number}}"
+  "prUrlTemplate": "https://reviews.example.com/{owner}/{repo}/pull/{number}"
 }
 ```
+
+An empty string (`""`) hides that attribution; `"attribution": false` hides all of it (v2.1.281+).
 
 #### Deprecated setting names
 
@@ -479,10 +481,10 @@ sequenceDiagram
     participant Editor as File System
     participant Memory as CLAUDE.md
 
-    User->>Claude: "Remember: use async/await"
+    User->>Claude: "Add async/await rule to CLAUDE.md"
     Claude->>User: "Which memory file?"
     User->>Claude: "Project memory"
-    Claude->>Editor: Open ~/.claude/settings.json
+    Claude->>Editor: Open ./CLAUDE.md
     Claude->>Memory: Write to ./CLAUDE.md
     Memory-->>Claude: File saved
     Claude->>Claude: Load updated memory
@@ -491,15 +493,15 @@ sequenceDiagram
 
 ## Auto Memory
 
-Auto memory is a persistent directory where Claude automatically records learnings, patterns, and insights as it works with your project. Unlike CLAUDE.md files which you write and maintain manually, auto memory is written by Claude itself during sessions.
+Auto memory is a persistent directory where Claude automatically saves typed notes (`user`, `feedback`, `project`, `reference`) as it works with your project. It skips anything it can derive from the codebase, such as architecture, file paths, or debugging fixes. Unlike CLAUDE.md files which you write and maintain manually, auto memory is written by Claude itself during sessions.
 
 ### How Auto Memory Works
 
 - **Location**: `~/.claude/projects/<project>/memory/`
 - **Entrypoint**: `MEMORY.md` serves as the main file in the auto memory directory
-- **Topic files**: Optional additional files for specific subjects (e.g., `debugging.md`, `api-conventions.md`)
+- **Topic files**: Optional additional files, one per memory (e.g., `prefers-pnpm.md`, `release-checklist.md`)
 - **Loading behavior**: The first 200 lines of `MEMORY.md` (or first 25KB, whichever comes first) are loaded into context at session start. Topic files are loaded on demand, not at startup.
-- **Read/write**: Claude reads and writes memory files during sessions as it discovers patterns and project-specific knowledge
+- **Read/write**: Claude reads and writes memory files during sessions as it learns your preferences, feedback, and project context
 - **Frontmatter**: Files that begin with YAML frontmatter get a `modified` field — an ISO 8601 timestamp Claude Code records each time it writes the file (v2.1.214)
 
 ### Auto Memory Architecture
@@ -508,11 +510,11 @@ Auto memory is a persistent directory where Claude automatically records learnin
 graph TD
     A["Claude Session Starts"] --> B["Load MEMORY.md<br/>(first 200 lines / 25KB)"]
     B --> C["Session Active"]
-    C --> D["Claude discovers<br/>patterns & insights"]
+    C --> D["Claude learns<br/>preferences & feedback"]
     D --> E{"Write to<br/>auto memory"}
     E -->|General notes| F["MEMORY.md"]
-    E -->|Topic-specific| G["debugging.md"]
-    E -->|Topic-specific| H["api-conventions.md"]
+    E -->|Topic-specific| G["prefers-pnpm.md"]
+    E -->|Topic-specific| H["release-checklist.md"]
     C --> I["On-demand load<br/>topic files"]
     I --> C
 
@@ -532,9 +534,9 @@ graph TD
 ```
 ~/.claude/projects/<project>/memory/
 ├── MEMORY.md              # Entrypoint (first 200 lines / 25KB loaded at startup)
-├── debugging.md           # Topic file (loaded on demand)
-├── api-conventions.md     # Topic file (loaded on demand)
-└── testing-patterns.md    # Topic file (loaded on demand)
+├── prefers-pnpm.md        # Topic file (loaded on demand)
+├── release-checklist.md   # Topic file (loaded on demand)
+└── team-contacts.md       # Topic file (loaded on demand)
 ```
 
 ### Version Requirement
@@ -562,13 +564,13 @@ To disable it via environment instead, set `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`. 
 By default, auto memory is stored in `~/.claude/projects/<project>/memory/`. You can change this location using the `autoMemoryDirectory` setting (available since **v2.1.74**):
 
 ```jsonc
-// In ~/.claude/settings.json or .claude/settings.local.json (user/local settings only)
+// In any settings file: user, project, local, or managed policy
 {
   "autoMemoryDirectory": "/path/to/custom/memory/directory"
 }
 ```
 
-> **Note**: `autoMemoryDirectory` can only be set in user-level (`~/.claude/settings.json`) or local settings (`.claude/settings.local.json`), not in project or managed policy settings.
+> **Note**: `autoMemoryDirectory` is read from any settings scope: user, project, local, managed policy, or `--settings`. The value must be an absolute path or start with `~/`.
 
 This is useful when you want to:
 
@@ -873,10 +875,10 @@ Claude has not save the rule because I did not have any `Claude.md` file anywher
 
 ### Example 4: Memory Update During Session
 
-You can add new rules to memory during an active Claude Code session by asking conversationally:
+You can add new rules to CLAUDE.md during an active Claude Code session by asking Claude directly (asking it to *remember* something saves to auto memory instead):
 
 ```markdown
-User: Remember that I prefer using React hooks instead of class components
+User: Add this to CLAUDE.md: I prefer using React hooks instead of class components
      for all new components.
 
 Claude: I'm adding that to your memory. Which memory file should this go in?
@@ -1244,8 +1246,8 @@ Auto Memory is a separate mechanism (`~/.claude/projects/<project>/memory/`), no
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/memory#agents-md
@@ -1254,4 +1256,6 @@ Auto Memory is a separate mechanism (`~/.claude/projects/<project>/memory/`), no
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.288
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.293
 - https://code.claude.com/docs/en/sub-agents#enable-persistent-memory
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/claude-directory
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

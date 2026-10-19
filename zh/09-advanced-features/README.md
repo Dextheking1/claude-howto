@@ -113,7 +113,7 @@ claude --permission-mode plan
 
 **快捷键：**
 - `Shift + Tab` - 切换权限模式（包括 plan）
-- `Alt + M` - 切换权限模式（Windows/Linux）
+- `Alt + M` - 切换权限模式（仅限 Windows，且运行时未启用 VT 输入模式时）
 
 ### Planning Mode 的好处
 
@@ -957,7 +957,8 @@ worktree 场景下依然可以配合工具和 hooks 自动化流程。
 
 ---
 
-**最后更新**: 2026 年 9 月 30 日
-**Claude Code 版本**: 2.1.285
+**最后更新**: 2026 年 10 月 18 日
+**Claude Code 版本**: 2.1.302
 **来源**:
+- https://code.claude.com/docs/en/interactive-mode
 - https://code.claude.com/docs/en/permission-modes#which-mode-a-session-starts-in

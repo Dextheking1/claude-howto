@@ -18,7 +18,7 @@
 ## Встановлення
 
 ```bash
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ## Що включено
@@ -105,3 +105,11 @@ Claude:
 🚀 Поди: 3/3 готові
 ⏱️  Час: 2хв 34с
 ```
+
+---
+
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
+**Джерела**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

@@ -97,7 +97,7 @@ chmod +x ~/.claude/hooks/*.sh
 # plan           - Read-only analysis, no modifications
 # auto           - Background classifier decides permissions automatically
 # dontAsk        - Only pre-approved tools run; everything else is denied
-# bypassPermissions - Accept all actions (requires --dangerously-skip-permissions)
+# bypassPermissions - Accept all actions (--permission-mode bypassPermissions; --dangerously-skip-permissions is equivalent)
 
 # Session management
 /resume                # Resume a previous conversation (no args = picker of past sessions)
@@ -132,7 +132,7 @@ claude -r "session"    # Resume session by name/ID
 | **Git Worktrees** | Built-in | `claude -w <name>` |
 | **Auto Memory** | Built-in | Auto-saves to `~/.claude/projects/<project>/memory/` |
 | **Task List** | Built-in | `Ctrl+T` (checklist), `/tasks` (background work) |
-| **Bundled Skills (10)** | Built-in | `/batch`, `/claude-api`, `/code-review [low\|medium\|high\|xhigh\|max\|ultra] [--fix] [--comment] [pr#\|branch\|path]` *(explicit invocation only since v2.1.215 — Claude won't trigger this on its own; with no level given it reuses the last one you typed, v2.1.223)*, `/simplify` *(cleanup-only review; distinct from `/code-review` again since v2.1.154)*, `/debug`, `/fewer-permission-prompts`, `/loop`, `/run` *(v2.1.145+)*, `/run-skill-generator` *(v2.1.145+)*, `/verify` *(v2.1.145+; explicit invocation only since v2.1.215 — Claude won't trigger this on its own)* |
+| **Bundled Skills (20)** | Built-in | `/batch`, `/claude-api`, `/code-review [low\|medium\|high\|xhigh\|max\|ultra] [--fix] [--comment] [pr#\|branch\|path]` *(Claude can also start it on its own, everywhere since v2.1.246; with no level given it reuses the last one you typed, v2.1.223)*, `/simplify` *(cleanup-only review; distinct from `/code-review` again since v2.1.154)*, `/debug`, `/fewer-permission-prompts`, `/loop`, `/run` *(v2.1.145+)*, `/run-skill-generator` *(v2.1.145+)*, `/verify` *(v2.1.145+; explicit invocation only since v2.1.215 — Claude won't trigger this on its own)* |
 
 ---
 
@@ -264,15 +264,15 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Run a command every 5 minutes
 /loop 5m /check-status
 
-# One-time reminder
-/loop 30m "remind me to check the deploy"
+# One-time reminder: ask in plain language (/loop repeats until cancelled)
+remind me in 30 minutes to check the deploy
 ```
 
 ---
 
 ## 📁 File Locations Reference
 
-```
+```text
 Your Project/
 ├── .claude/
 │   ├── commands/              # Slash commands go here
@@ -292,9 +292,12 @@ User Home/
 │   ├── skills/                # Personal skills
 │   ├── hooks/                 # Hook scripts
 │   ├── settings.json          # User settings
-│   ├── managed-settings.d/    # Managed settings (enterprise/org)
 │   └── CLAUDE.md              # Personal memory
 └── .claude.json               # Personal MCP config (user scope)
+
+System directory/              # macOS /Library/Application Support/ClaudeCode/, Linux /etc/claude-code/, Windows C:\Program Files\ClaudeCode\
+├── managed-settings.json      # Managed settings (enterprise/org)
+└── managed-settings.d/        # Managed settings drop-ins
 ```
 
 ---
@@ -403,7 +406,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 | **Auto Memory** | Automatic memory saving from conversations | Claude saves notes to `~/.claude/projects/<project>/memory/MEMORY.md`; manage with `/memory` |
 | **AGENTS.md** *(v2.1.277)* | Cross-tool project-context file, read as project instructions when no `CLAUDE.md` exists at or above the working directory | Switch modes with **Project instructions** in `/config`. See [AGENTS.md](02-memory/README.md#agentsmd) |
 | **Git Worktrees** | Isolated workspaces for parallel development | `claude --worktree <name>` (or `-w`) |
-| **Model Selection** | Switch between Fable 5.1, Fable 5, Opus 5.5, Opus 5, Sonnet 5, Sonnet 4.6, Opus 4.8, Haiku 5.5, and Haiku 4.5 | `/model` — since v2.1.153 the choice is saved as the default for new sessions; press `s` for session-only |
+| **Model Selection** | Switch between Fable 5.1, Fable 5, Opus 5.5, Opus 5, Sonnet 5.5, Sonnet 5, Sonnet 4.6, Opus 4.8, Haiku 5.5, and Haiku 4.5 | `/model` (`sonnet` resolves to Sonnet 5.5 on the Anthropic API, v2.1.284+) — since v2.1.153 the choice is saved as the default for new sessions; press `s` for session-only |
 | **Agent Teams** | Coordinate multiple agents on tasks | Enable with `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` env var (experimental) |
 | **Dynamic Workflows** *(v2.1.154)* | Deterministic multi-agent orchestration; since v2.1.219 the default size guideline is medium (aim for fewer than 10 agents) | `/workflows` to view runs; ask Claude to create one; change the size via **Dynamic workflow size** in `/config` |
 | **Scheduled Tasks** | Recurring tasks with `/loop` | `/loop 5m /command` or CronCreate tool |
@@ -521,8 +524,8 @@ Getting started checklist:
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/workflows#set-a-size-guideline
 - https://code.claude.com/docs/en/memory#agents-md
@@ -539,4 +542,7 @@ Getting started checklist:
 - https://code.claude.com/docs/en/agent-teams
 - https://code.claude.com/docs/en/memory#storage-location
 - https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/managed-settings
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/code-review-local
 **Compatible Models**: Claude Fable 5.1, Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

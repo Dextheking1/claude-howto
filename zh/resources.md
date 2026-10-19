@@ -235,10 +235,10 @@ graph TD
 | 功能 | 说明 | 了解更多 |
 |---------|-------------|------------|
 | **Auto Memory** | Claude 会自动学习并记住你跨会话的偏好 | [记忆指南](02-memory/README.md) |
-| **Remote Control** | 通过外部工具和脚本以编程方式控制 Claude Code 会话 | [高级功能](09-advanced-features/README.md) |
+| **Remote Control** | 从手机、浏览器或 Claude 应用继续本地的 Claude Code 会话 | [高级功能](09-advanced-features/README.md) |
 | **Web Sessions** | 通过基于浏览器的界面访问 Claude Code，实现远程开发 | [CLI 参考](10-cli/README.md) |
 | **Desktop App** | Claude Code 的原生桌面应用，界面更强大 | [Claude Code 文档](https://code.claude.com/docs/en/desktop) |
-| **Extended Thinking** | 通过 `Alt+T` / `Option+T` 或 `MAX_THINKING_TOKENS` 环境变量切换深度推理 | [高级功能](09-advanced-features/README.md) |
+| **Extended Thinking** | 通过 `Alt+T` / `Option+T` 切换深度推理；Opus 4.7+、Sonnet 5+、Haiku 5.5 和 Fable 始终使用自适应推理，因此 `MAX_THINKING_TOKENS` 固定预算不适用（用 `/effort` 控制深度） | [高级功能](09-advanced-features/README.md) |
 | **Permission Modes** | 精细权限控制：default、acceptEdits、plan、auto、dontAsk、bypassPermissions | [高级功能](09-advanced-features/README.md) |
 | **7-Tier Memory** | Managed Policy、Project、Project Rules、User、User Rules、Local、Auto Memory | [记忆指南](02-memory/README.md) |
 | **Hook Events** | 33 个事件：PreToolUse、PostToolUse、PostToolUseFailure、Stop、StopFailure、SubagentStart、SubagentStop、Notification、Elicitation 等 | [Hooks 指南](06-hooks/README.md) |
@@ -249,7 +249,9 @@ graph TD
 
 ---
 
-**最后更新**：2026 年 10 月 15 日
-**Claude Code 版本**：2.1.300
+**最后更新**：2026 年 10 月 18 日
+**Claude Code 版本**：2.1.302
 **来源**：
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/model-config

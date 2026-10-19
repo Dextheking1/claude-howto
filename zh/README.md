@@ -206,7 +206,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 完整路径大约需要 11 到 13 小时。但你在 15 分钟内就能获得直接收益，只要复制一个 slash command 模板并试用即可。
 
 **我可以搭配 Claude Sonnet / Haiku / Opus 使用吗？**
-可以。所有模板都适用于 Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5。
+可以。所有模板都适用于 Claude Fable 5、Claude Opus 5、Claude Sonnet 5.5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5。
 
 **我可以参与贡献吗？**
 当然可以。请查看 [CONTRIBUTING.md](CONTRIBUTING.md) 了解贡献规范。我们欢迎新的示例、bug 修复、文档改进以及社区模板。
@@ -282,16 +282,15 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 cp 04-subagents/*.md .claude/agents/
 
 # MCP
-export GITHUB_TOKEN="token"
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Hooks
 mkdir -p ~/.claude/hooks
 cp 06-hooks/*.sh ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
 
-# Plugins
-/plugin install pr-review
+# Plugins（在仓库根目录加载本地插件）
+claude --plugin-dir ./07-plugins/pr-review
 
 # Checkpoints（默认自动开启，可在设置中配置）
 # 参见 08-checkpoints/README.md
@@ -425,11 +424,10 @@ cp 04-subagents/*.md /path/to/project/.claude/agents/
 **安装**:
 ```bash
 # 设置环境变量
-export GITHUB_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # 通过 CLI 添加 MCP server
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # 或手动添加到项目 .mcp.json（参见 [05-mcp/README.md](05-mcp/README.md) 中的示例）
 ```
@@ -446,7 +444,7 @@ claude mcp add github -- npx -y @modelcontextprotocol/server-github
 **是什么**: 基于事件触发的 shell 命令，会在 Claude Code 事件发生时自动执行
 
 **示例**:
-- `format-code.sh` - 写入前自动格式化代码
+- `format-code.sh` - 写入后自动格式化代码
 - `pre-commit.sh` - 提交前运行测试
 - `security-scan.sh` - 扫描安全问题
 - `log-bash.sh` - 记录所有 bash 命令
@@ -464,14 +462,15 @@ chmod +x ~/.claude/hooks/*.sh
 ```json
 {
   "hooks": {
-    "PreToolUse": [{
-      "matcher": "Write",
-      "hooks": ["~/.claude/hooks/format-code.sh"]
-    }],
-    "PostToolUse": [{
-      "matcher": "Write",
-      "hooks": ["~/.claude/hooks/security-scan.sh"]
-    }]
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/format-code.sh" },
+          { "type": "command", "command": "~/.claude/hooks/security-scan.sh" }
+        ]
+      }
+    ]
   }
 }
 ```
@@ -502,9 +501,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 **安装**:
 ```bash
-/plugin install pr-review
-/plugin install devops-automation
-/plugin install documentation
+# 在仓库根目录运行（本仓库没有 marketplace，因此 /plugin install 不适用）
+claude --plugin-dir ./07-plugins/pr-review
+claude --plugin-dir ./07-plugins/devops-automation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 **使用方法**: 使用其中打包好的 slash commands 和功能
@@ -529,12 +529,13 @@ chmod +x ~/.claude/hooks/*.sh
 # 如需回退，按两次 Esc，或者使用：
 /rewind
 
-# 然后从以下五个选项中选择：
+# 然后从以下六个选项中选择：
 # 1. 恢复代码和对话
 # 2. 恢复对话
 # 3. 恢复代码
 # 4. 从这里开始总结
-# 5. 算了
+# 5. 总结到这里
+# 6. 算了
 ```
 
 **使用场景**:
@@ -878,10 +879,13 @@ MIT 许可证，详见 [LICENSE](LICENSE)。你可以自由使用、修改和分
 
 ---
 
-**最后更新**：2026 年 9 月 19 日
-**Claude Code 版本**：2.1.278
+**最后更新**：2026 年 10 月 18 日
+**Claude Code 版本**：2.1.302
 **来源**：
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/model-config
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
 **兼容模型**：Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5

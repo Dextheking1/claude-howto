@@ -239,10 +239,10 @@ graph TD
 | Функція | Опис | Дізнатися більше |
 |---------|------|------------------|
 | **Auto Memory** | Claude автоматично вивчає та запам'ятовує ваші уподобання між сесіями | [Посібник з пам'яті](02-memory/) |
-| **Remote Control** | Програмне управління сесіями Claude Code із зовнішніх інструментів та скриптів | [Просунуті функції](09-advanced-features/) |
+| **Remote Control** | Продовження локальної сесії Claude Code з телефона, браузера або застосунку Claude | [Просунуті функції](09-advanced-features/) |
 | **Web Sessions** | Доступ до Claude Code через браузерні інтерфейси для віддаленої розробки | [Довідник CLI](10-cli/) |
 | **Desktop App** | Нативний десктопний додаток Claude Code з покращеним UI | [Claude Code Docs](https://code.claude.com/docs/en/desktop) |
-| **Extended Thinking** | Перемикання глибокого мислення через `Alt+T`/`Option+T` або змінну `MAX_THINKING_TOKENS` | [Просунуті функції](09-advanced-features/) |
+| **Extended Thinking** | Перемикання глибокого мислення через `Alt+T`/`Option+T`; Opus 4.7+, Sonnet 5+, Haiku 5.5 і Fable завжди використовують адаптивне мислення, тож фіксований бюджет `MAX_THINKING_TOKENS` не застосовується (глибину керуйте через `/effort`) | [Просунуті функції](09-advanced-features/) |
 | **Permission Modes** | Тонке управління: default, acceptEdits, plan, auto, dontAsk, bypassPermissions | [Просунуті функції](09-advanced-features/) |
 | **7-Tier Memory** | Managed Policy, Project, Project Rules, User, User Rules, Local, Auto Memory | [Посібник з пам'яті](02-memory/) |
 | **Hook Events** | 33 події: PreToolUse, PostToolUse, PostToolUseFailure, Stop, StopFailure, SubagentStart, SubagentStop, Notification, Elicitation та інші | [Посібник з хуків](06-hooks/) |
@@ -252,7 +252,9 @@ graph TD
 | **Keyboard Customization** | Налаштування клавіатурних скорочень включаючи chord-послідовності | [Просунуті функції](09-advanced-features/) |
 
 ---
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/model-config

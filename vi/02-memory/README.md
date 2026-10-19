@@ -291,13 +291,13 @@ Trong các monorepos lớn, một số file CLAUDE.md có thể không liên qua
 // In ~/.claude/settings.json hoặc .claude/settings.json
 {
   "claudeMdExcludes": [
-    "packages/legacy-app/CLAUDE.md",
-    "vendors/**/CLAUDE.md"
+    "**/packages/legacy-app/CLAUDE.md",
+    "**/vendors/**/CLAUDE.md"
   ]
 }
 ```
 
-Các mẫu được so khớp với các đường dẫn tương đối với root dự án. Điều này đặc biệt hữu ích cho:
+Các mẫu được so khớp với đường dẫn file tuyệt đối theo cú pháp glob, vì vậy hãy bắt đầu các mẫu trong repo bằng `**/`. Điều này đặc biệt hữu ích cho:
 
 - Monorepos với nhiều dự án con, trong đó chỉ một số có liên quan
 - Các kho chứa chứa các file CLAUDE.md của bên thứ ba hoặc được bán
@@ -405,10 +405,10 @@ sequenceDiagram
     participant Editor as File System
     participant Memory as CLAUDE.md
 
-    User->>Claude: "Remember: use async/await"
+    User->>Claude: "Add async/await rule to CLAUDE.md"
     Claude->>User: "Which memory file?"
     User->>Claude: "Project memory"
-    Claude->>Editor: Open ~/.claude/settings.json
+    Claude->>Editor: Open ./CLAUDE.md
     Claude->>Memory: Write to ./CLAUDE.md
     Memory-->>Claude: File saved
     Claude->>Claude: Load updated memory
@@ -417,15 +417,15 @@ sequenceDiagram
 
 ## Auto Memory
 
-Auto memory là một thư mục liên tục nơi Claude tự động ghi lại các bài học, mẫu, và thông tin chi tiết khi nó làm việc với dự án của bạn. Không giống như các file CLAUDE.md mà bạn viết và duy trì thủ công, auto memory được viết bởi Claude bản thân trong các phiên.
+Auto memory là một thư mục liên tục nơi Claude tự động lưu các ghi chú có phân loại (`user`, `feedback`, `project`, `reference`) khi nó làm việc với dự án của bạn. Claude bỏ qua những gì có thể suy ra từ codebase, như kiến trúc, đường dẫn file, hoặc các bản sửa lỗi debug. Không giống như các file CLAUDE.md mà bạn viết và duy trì thủ công, auto memory được viết bởi Claude bản thân trong các phiên.
 
 ### Cách Auto Memory Hoạt Động
 
 - **Vị trí**: `~/.claude/projects/<project>/memory/`
 - **Điểm vào**: `MEMORY.md` phục vụ như file chính trong thư mục auto memory
-- **Files chủ đề**: Các file bổ sung tùy chọn cho các chủ đề cụ thể (ví dụ: `debugging.md`, `api-conventions.md`)
+- **Files chủ đề**: Các file bổ sung tùy chọn, mỗi file một mục nhớ (ví dụ: `prefers-pnpm.md`, `release-checklist.md`)
 - **Hành vi tải**: 200 dòng đầu tiên của `MEMORY.md` được tải vào system prompt khi bắt đầu phiên. Các file chủ đề được tải theo yêu cầu, không phải khi khởi động.
-- **Đọc/ghi**: Claude đọc và ghi các file bộ nhớ trong các phiên khi nó khám phá các mẫu và kiến thức cụ thể dự án
+- **Đọc/ghi**: Claude đọc và ghi các file bộ nhớ trong các phiên khi nó học được sở thích, phản hồi của bạn và bối cảnh dự án
 
 ### Kiến Trúc Auto Memory
 
@@ -433,11 +433,11 @@ Auto memory là một thư mục liên tục nơi Claude tự động ghi lại 
 graph TD
     A["Claude Session Starts"] --> B["Load MEMORY.md<br/>(first 200 lines)"]
     B --> C["Session Active"]
-    C --> D["Claude discovers<br/>patterns & insights"]
+    C --> D["Claude learns<br/>preferences & feedback"]
     D --> E{"Write to<br/>auto memory"}
     E -->|General notes| F["MEMORY.md"]
-    E -->|Topic-specific| G["debugging.md"]
-    E -->|Topic-specific| H["api-conventions.md"]
+    E -->|Topic-specific| G["prefers-pnpm.md"]
+    E -->|Topic-specific| H["release-checklist.md"]
     C --> I["On-demand load<br/>topic files"]
     I --> C
 
@@ -457,9 +457,9 @@ graph TD
 ```
 ~/.claude/projects/<project>/memory/
 ├── MEMORY.md              # Entrypoint (200 dòng đầu tiên được tải khi khởi động)
-├── debugging.md           # Topic file (được tải theo yêu cầu)
-├── api-conventions.md     # Topic file (được tải theo yêu cầu)
-└── testing-patterns.md    # Topic file (được tải theo yêu cầu)
+├── prefers-pnpm.md        # Topic file (được tải theo yêu cầu)
+├── release-checklist.md   # Topic file (được tải theo yêu cầu)
+└── team-contacts.md       # Topic file (được tải theo yêu cầu)
 ```
 
 ### Yêu Cầu Phiên Bản
@@ -475,13 +475,13 @@ npm install -g @anthropic-ai/claude-code@latest
 Theo mặc định, auto memory được lưu trữ trong `~/.claude/projects/<project>/memory/`. Bạn có thể thay đổi vị trí này sử dụng cài đặt `autoMemoryDirectory` (có sẵn kể từ **v2.1.74**):
 
 ```jsonc
-// In ~/.claude/settings.json hoặc .claude/settings.local.json (chỉ cài đặt người dùng/cục bộ)
+// Trong bất kỳ file cài đặt nào: người dùng, dự án, cục bộ hoặc chính sách được quản lý
 {
   "autoMemoryDirectory": "/path/to/custom/memory/directory"
 }
 ```
 
-> **Lưu ý**: `autoMemoryDirectory` chỉ có thể được đặt ở cấp người dùng (`~/.claude/settings.json`) hoặc cài đặt cục bộ (`.claude/settings.local.json`), không phải trong cài đặt dự án hoặc chính sách được quản lý.
+> **Lưu ý**: `autoMemoryDirectory` được đọc từ mọi phạm vi cài đặt: người dùng, dự án, cục bộ, chính sách được quản lý, hoặc `--settings`. Giá trị phải là đường dẫn tuyệt đối hoặc bắt đầu bằng `~/`.
 
 Điều này hữu ích khi bạn muốn:
 
@@ -776,12 +776,12 @@ I organize my projects as:
 
 ### Ví Dụ 4: Cập Nhật Bộ Nhớ Trong Phiên
 
-Bạn có thể thêm các quy tắc mới vào bộ nhớ trong một phiên Claude Code đang hoạt động. Có hai cách để làm điều này:
+Bạn có thể thêm các quy tắc mới vào CLAUDE.md trong một phiên Claude Code đang hoạt động (yêu cầu Claude *ghi nhớ* điều gì đó sẽ lưu vào auto memory thay vì CLAUDE.md). Có hai cách để làm điều này:
 
 #### Phương Pháp 1: Yêu Cầu Trực Tiếp
 
 ```markdown
-User: Remember that I prefer using React hooks instead of class components
+User: Add this to CLAUDE.md: I prefer using React hooks instead of class components
      for all new components.
 
 Claude: I'm adding that to your memory. Which memory file should this go in?
@@ -1159,12 +1159,14 @@ Claude sẽ nhắc bạn chọn file bộ nhớ nào để cập nhật.
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/memory#agents-md
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.288
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.293
 - https://code.claude.com/docs/en/sub-agents#enable-persistent-memory
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/claude-directory
 **Các Mô Hình Tương Thích**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

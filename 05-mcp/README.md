@@ -107,14 +107,16 @@ Every MCP stdio server is spawned with `CLAUDE_PROJECT_DIR=<absolute path to rep
     "repo-tools": {
       "type": "stdio",
       "command": "node",
-      "args": ["${CLAUDE_PROJECT_DIR}/.claude/mcp/repo-tools.js"],
+      "args": ["${CLAUDE_PROJECT_DIR:-.}/.claude/mcp/repo-tools.js"],
       "env": {
-        "REPO_ROOT": "${CLAUDE_PROJECT_DIR}"
+        "REPO_ROOT": "${CLAUDE_PROJECT_DIR:-.}"
       }
     }
   }
 }
 ```
+
+> **Note**: In project, local and user configs, write `${CLAUDE_PROJECT_DIR:-.}` with a default: the variable is set in the server's environment, not in Claude Code's own. Only plugin MCP configs substitute `${CLAUDE_PROJECT_DIR}` directly.
 
 Use this when your stdio server needs to read files relative to the project root regardless of where Claude Code was launched.
 
@@ -269,7 +271,7 @@ Tool search is on by default: MCP tools are deferred and discovered on demand, s
 | `ENABLE_TOOL_SEARCH` | `true` | All MCP tools deferred |
 | `ENABLE_TOOL_SEARCH` | `false` | Disabled; all tool descriptions sent in full |
 
-> **Note:** Tool search requires a model that supports `tool_reference` blocks: Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.5, and later models.
+> **Note:** Tool search requires a model that supports `tool_reference` blocks: Claude Opus 4, Claude Sonnet 4, Claude Haiku 4.5, and later models (Opus 4.5, Sonnet 4.5, Haiku 4.5 and later on Google Cloud's Agent Platform).
 
 ### Bypassing Tool Search per Server (v2.1.121+)
 
@@ -368,7 +370,7 @@ Claude Code uses `local`:
 
 ```bash
 # Project scope — writes to .mcp.json so the team shares it
-claude mcp add --scope project --transport http github https://api.github.com/mcp
+claude mcp add --scope project --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # User scope — available in every project
 claude mcp add --scope user --transport stdio memory -- npx @modelcontextprotocol/server-memory
@@ -383,7 +385,10 @@ Store project-specific MCP configurations in `.mcp.json`:
   "mcpServers": {
     "github": {
       "type": "http",
-      "url": "https://api.github.com/mcp"
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
     }
   }
 }
@@ -397,7 +402,7 @@ Team members will see an approval prompt on first use of project MCPs. In an unt
 
 ```bash
 # Add HTTP-based server
-claude mcp add --transport http github https://api.github.com/mcp
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Add local stdio server
 claude mcp add --transport stdio database -- npx @company/db-server
@@ -456,10 +461,10 @@ Since v2.1.238, `claude mcp list` and `claude mcp get` show disabled servers as 
 {
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     }
   }
@@ -508,9 +513,9 @@ Reviewers: @bob, @charlie
 
 **Setup**:
 ```bash
-export GITHUB_TOKEN="your_github_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_github_token"
 # Or use the CLI to add directly:
-claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 ```
 
 ### Environment Variable Expansion in Configuration
@@ -552,10 +557,7 @@ Variables are expanded at runtime:
   "mcpServers": {
     "database": {
       "command": "npx",
-      "args": ["@modelcontextprotocol/server-database"],
-      "env": {
-        "DATABASE_URL": "${DATABASE_URL}"
-      }
+      "args": ["-y", "@bytebase/dbhub", "--dsn", "postgresql://readonly:pass@prod.db.com:5432/analytics"]
     }
   }
 }
@@ -584,9 +586,8 @@ ORDER BY order_count DESC;
 
 **Setup**:
 ```bash
-export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-# Or use the CLI to add directly:
-claude mcp add --transport stdio database -- npx @modelcontextprotocol/server-database
+claude mcp add --transport stdio database -- npx -y @bytebase/dbhub \
+  --dsn "postgresql://readonly:pass@prod.db.com:5432/analytics"
 ```
 
 ### Example 3: Multi-MCP Workflow
@@ -638,9 +639,10 @@ Final Output:
 
 **Setup**:
 ```bash
-export GITHUB_TOKEN="your_github_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_github_token"
 export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SLACK_TOKEN="your_slack_token"
+export SLACK_BOT_TOKEN="your_slack_bot_token"
+export SLACK_TEAM_ID="your_slack_team_id"
 # Add each MCP server via the CLI or configure them in .mcp.json
 ```
 
@@ -721,9 +723,10 @@ Store sensitive credentials in environment variables:
 
 ```bash
 # ~/.bashrc or ~/.zshrc
-export GITHUB_TOKEN="ghp_xxxxxxxxxxxxx"
+export GITHUB_PERSONAL_ACCESS_TOKEN="ghp_xxxxxxxxxxxxx"
 export DATABASE_URL="postgresql://user:pass@localhost/mydb"
-export SLACK_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_BOT_TOKEN="xoxb-xxxxxxxxxxxxx"
+export SLACK_TEAM_ID="T0000000000"
 ```
 
 Then reference them in MCP config:
@@ -731,7 +734,7 @@ Then reference them in MCP config:
 ```json
 {
   "env": {
-    "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+    "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
   }
 }
 ```
@@ -847,6 +850,8 @@ MCP servers can be defined inline within agent frontmatter using the `mcpServers
 
 ```yaml
 ---
+name: my-tool-agent
+description: Uses my-tool for specialized operations
 mcpServers:
   my-tool:
     type: http
@@ -865,7 +870,7 @@ Claude Code enforces limits on MCP tool output to prevent context overflow:
 | Limit | Threshold | Behavior |
 |-------|-----------|----------|
 | **Warning** | 10,000 tokens | A warning is displayed that the output is large |
-| **Default max** | 25,000 tokens | Output is truncated beyond this limit |
+| **Default max** | 25,000 tokens | Larger output is saved to a file, and the file path goes into the conversation instead |
 | **Disk persistence** | 50,000 characters | Tool results exceeding 50K characters are persisted to disk |
 
 The maximum output limit is configurable via the `MAX_MCP_OUTPUT_TOKENS` environment variable:
@@ -1147,7 +1152,7 @@ MCPorter complements the code-execution approach described above by providing th
 
 1. **Add your first MCP server** using the CLI (example: GitHub):
 ```bash
-claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 ```
 
    Or create a `.mcp.json` file in your project root:
@@ -1155,10 +1160,10 @@ claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-gith
 {
   "mcpServers": {
     "github": {
-      "command": "npx",
-      "args": ["@modelcontextprotocol/server-github"],
-      "env": {
-        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}"
       }
     }
   }
@@ -1167,7 +1172,7 @@ claude mcp add --transport stdio github -- npx @modelcontextprotocol/server-gith
 
 2. **Set environment variables:**
 ```bash
-export GITHUB_TOKEN="your_github_personal_access_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_github_personal_access_token"
 ```
 
 3. **Test the connection:**
@@ -1190,7 +1195,7 @@ npm install -g @modelcontextprotocol/server-github
 
 **Database MCP:**
 ```bash
-npm install -g @modelcontextprotocol/server-database
+npm install -g @bytebase/dbhub
 ```
 
 **Filesystem MCP:**
@@ -1198,7 +1203,7 @@ npm install -g @modelcontextprotocol/server-database
 npm install -g @modelcontextprotocol/server-filesystem
 ```
 
-**Slack MCP:**
+**Slack MCP (deprecated package):**
 ```bash
 npm install -g @modelcontextprotocol/server-slack
 ```
@@ -1228,7 +1233,7 @@ If you see this warning, re-check the value in `.mcp.json` (or the env var it ex
 
 ```bash
 # Reveals hidden leading/trailing whitespace between the delimiters
-printf '[%s]\n' "$GITHUB_TOKEN"
+printf '[%s]\n' "$GITHUB_PERSONAL_ACCESS_TOKEN"
 ```
 
 ### Skipped Servers in Headless Runs (v2.1.219+)
@@ -1257,10 +1262,10 @@ npm install -g @modelcontextprotocol/server-github
 ### Authentication Failed
 ```bash
 # Verify environment variable is set
-echo $GITHUB_TOKEN
+echo $GITHUB_PERSONAL_ACCESS_TOKEN
 
 # Re-export if needed
-export GITHUB_TOKEN="your_token"
+export GITHUB_PERSONAL_ACCESS_TOKEN="your_token"
 
 # Verify token has correct permissions
 # Check GitHub token scopes at: https://github.com/settings/tokens
@@ -1308,8 +1313,8 @@ export GITHUB_TOKEN="your_token"
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/mcp
 - https://code.claude.com/docs/en/managed-mcp
@@ -1324,4 +1329,5 @@ export GITHUB_TOKEN="your_token"
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.296
 - https://code.claude.com/docs/en/mcp#tool-search-for-mcp-server-authors
 - https://code.claude.com/docs/en/mcp#environment-variable-expansion-in-mcp-json
+- https://code.claude.com/docs/en/sub-agents
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

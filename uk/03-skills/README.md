@@ -139,7 +139,7 @@ Show concrete examples of using this Skill.
 
 ### Рекомендовані поля
 
-- **description** (рекомендовано): що навичка робить І коли її використовувати. Якщо поле пропущено, Claude Code бере перший абзац markdown-вмісту. Об'єднаний текст `description` + `when_to_use` обрізається до **1 536 символів** у переліку навичок (налаштовується через `skillListingMaxDescChars`). Саме за цим текстом Claude визначає, коли активувати навичку.
+- **description** (рекомендовано): що навичка робить І коли її використовувати. Якщо поле пропущено, Claude Code бере перший непорожній рядок markdown-вмісту. Об'єднаний текст `description` + `when_to_use` обрізається до **1 536 символів** у переліку навичок (налаштовується через `skillListingMaxDescChars`). Саме за цим текстом Claude визначає, коли активувати навичку.
 - **name** (необов'язкове): за замовчуванням дорівнює **імені каталогу** навички. Якщо вказане, задає відображувану назву — тільки малі літери, цифри, дефіси (макс. 64 символи) — це рекомендована, переносна форма (обов'язкова для claude.ai та Skills API). Сам Claude Code (v2.1.299+) пропускає навичку чи команду, ім'я якої містить приховані символи, символи зміни напряму тексту або символи, схожі на пробіл, `<` чи `>`, або довше за 256 символів, доки ви її не перейменуєте. У Claude Code імена `anthropic-skills` і `synced` зарезервовані й не завантажуються поза плагіном; суворіша заборона на "anthropic" або "claude" стосується навичок, завантажених у claude.ai або Skills API. Для навичок у плагінах `name` також задає останній сегмент команди.
 
 Усі поля фронтматера SKILL.md є необов'язковими; рекомендованим є лише `description`.
@@ -768,7 +768,7 @@ Claude Code постачається з кількома вбудованими 
 | `/simplify` | Перевірка змінених файлів на повторне використання, якість та ефективність; запускає 3 паралельних агенти рев'ю |
 | `/batch <instruction>` | Оркестрація масштабних паралельних змін по кодовій базі з використанням git worktrees |
 | `/debug [description]` | Усунення несправностей поточної сесії через читання журналу налагодження |
-| `/loop [interval] <prompt>` | Циклічне виконання промпта з інтервалом (наприклад, `/loop 5m check the deploy`) |
+| `/loop [interval] [prompt]` | Циклічне виконання промпта з інтервалом (наприклад, `/loop 5m check the deploy`) |
 | `/claude-api` | Завантаження довідника Claude API/SDK; автоактивується при імпортах `anthropic`/`@anthropic-ai/sdk` |
 
 Ці навички доступні одразу і не потребують встановлення чи конфігурації. Вони використовують той самий формат SKILL.md, що й власні навички.
@@ -815,8 +815,8 @@ chmod +x ~/.claude/skills/my-skill/scripts/*.py
 - [Посібник хуків](../06-hooks/) — автоматизація за подіями
 
 ---
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/settings-reference
@@ -827,4 +827,5 @@ chmod +x ~/.claude/skills/my-skill/scripts/*.py
 - https://code.claude.com/docs/en/skills#pre-approve-tools-for-a-skill
 - https://code.claude.com/docs/en/memory#write-effective-instructions
 - https://code.claude.com/docs/en/memory
+- https://code.claude.com/docs/en/commands
 **Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

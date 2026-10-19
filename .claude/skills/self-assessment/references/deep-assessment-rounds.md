@@ -37,7 +37,7 @@ Options:
 1. "Connected an MCP server and used its tools" — e.g., GitHub MCP for PRs/issues, database MCP for queries, or any external data source
 2. "Used advanced MCP features" — Project-scope .mcp.json, OAuth authentication, MCP resources with @mentions, Tool Search, or `claude mcp serve`
 3. "Created or configured custom subagents" — Defined agents in .claude/agents/ with custom tools, model, or permissions
-4. "Used advanced subagent features" — Worktree isolation, persistent agent memory, background tasks with Ctrl+B, agent allowlists with `Agent(agent_type)` (the `Task(...)` form is a back-compat alias), or agent teams
+4. "Used advanced subagent features" — Worktree isolation, persistent agent memory, background tasks with Ctrl+B, agent allowlists with `Agent(agent_type)` for an agent run as the main thread with `claude --agent` (the `Task(...)` form is a back-compat alias), or agent teams
 
 **Scoring:** Options 1-2 → **MCP** (0-2); Options 3-4 → **Subagents** (0-2)
 
@@ -49,7 +49,7 @@ Options:
 Options:
 1. "Used checkpoints for safe experimentation" — Rewound to a checkpoint with Esc+Esc or /rewind, restored code and/or conversation, or used either Summarize option (summarize from here / summarize up to here)
 2. "Used planning mode or extended thinking" — Activated planning via /plan, Shift+Tab, or --permission-mode plan; toggled extended thinking with Alt+T/Option+T on a model that allows it, or set reasoning depth with `/effort`
-3. "Configured permission modes" — Used any of the six modes — manual (renamed from default in v2.1.200), acceptEdits, plan, auto, dontAsk, or bypassPermissions — via CLI flags, keyboard shortcuts, or settings (just starting in the built-in auto default doesn't count)
+3. "Configured permission modes" — Used any of the six modes — manual (config value `default`; shown as Manual since v2.1.200), acceptEdits, plan, auto, dontAsk, or bypassPermissions — via CLI flags, keyboard shortcuts, or settings (just starting in the built-in auto default doesn't count)
 4. "Used remote/desktop/web features" — Used `claude --remote-control`, `claude --cloud`, `/teleport`, `/desktop`, or worktrees with `claude -w`
 
 **Scoring:** Option 1 → **Checkpoints** (0-1); Options 2-4 → **Advanced Features** (0-3)
@@ -69,8 +69,8 @@ Options:
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/sub-agents

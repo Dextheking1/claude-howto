@@ -105,7 +105,7 @@ Remember that we always use TypeScript strict mode in this project.
 Please add to memory: prefer async/await over promise chains.
 ```
 
-Claude оновить відповідний файл CLAUDE.md на основі вашого запиту.
+Якщо попросити Claude щось запам'ятати, це збережеться в auto memory. Щоб змінити CLAUDE.md, скажіть «додай це до CLAUDE.md» або відредагуйте файл самостійно через `/memory`.
 
 **Історична довідка** (більше не працює):
 
@@ -282,13 +282,13 @@ graph TD
 // В ~/.claude/settings.json або .claude/settings.json
 {
   "claudeMdExcludes": [
-    "packages/legacy-app/CLAUDE.md",
-    "vendors/**/CLAUDE.md"
+    "**/packages/legacy-app/CLAUDE.md",
+    "**/vendors/**/CLAUDE.md"
   ]
 }
 ```
 
-Патерни зіставляються зі шляхами відносно кореня проєкту. Це особливо корисно для:
+Патерни зіставляються з абсолютними шляхами файлів за синтаксисом glob, тому починайте патерни для репозиторію з `**/`. Це особливо корисно для:
 
 - Монорепозиторіїв з багатьма підпроєктами, де релевантні лише деякі
 - Репозиторіїв із вендорними або сторонніми файлами CLAUDE.md
@@ -396,10 +396,10 @@ sequenceDiagram
     participant Editor as File System
     participant Memory as CLAUDE.md
 
-    User->>Claude: "Remember: use async/await"
+    User->>Claude: "Add async/await rule to CLAUDE.md"
     Claude->>User: "Which memory file?"
     User->>Claude: "Project memory"
-    Claude->>Editor: Open ~/.claude/settings.json
+    Claude->>Editor: Open ./CLAUDE.md
     Claude->>Memory: Write to ./CLAUDE.md
     Memory-->>Claude: File saved
     Claude->>Claude: Load updated memory
@@ -408,15 +408,15 @@ sequenceDiagram
 
 ## Auto Memory
 
-Auto memory — це постійний каталог, куди Claude автоматично записує висновки, патерни та інсайти під час роботи з вашим проєктом. На відміну від файлів CLAUDE.md, які ви пишете та підтримуєте вручну, auto memory записується самим Claude під час сесій.
+Auto memory — це постійний каталог, куди Claude автоматично зберігає типізовані нотатки (`user`, `feedback`, `project`, `reference`) під час роботи з вашим проєктом. Claude пропускає все, що можна вивести з кодової бази, як-от архітектуру, шляхи до файлів або виправлення під час налагодження. На відміну від файлів CLAUDE.md, які ви пишете та підтримуєте вручну, auto memory записується самим Claude під час сесій.
 
 ### Як працює Auto Memory
 
 - **Розташування**: `~/.claude/projects/<project>/memory/`
 - **Точка входу**: `MEMORY.md` — головний файл у каталозі auto memory
-- **Тематичні файли**: додаткові файли для конкретних тем (наприклад, `debugging.md`, `api-conventions.md`)
+- **Тематичні файли**: необов'язкові додаткові файли, по одному на кожен запис пам'яті (наприклад, `prefers-pnpm.md`, `release-checklist.md`)
 - **Поведінка завантаження**: перші 200 рядків `MEMORY.md` (або перші 25 КБ — що менше) завантажуються в контекст на початку сесії. Тематичні файли завантажуються за потребою, не при запуску.
-- **Читання/запис**: Claude читає та записує файли пам'яті під час сесій, виявляючи патерни та знання, специфічні для проєкту
+- **Читання/запис**: Claude читає та записує файли пам'яті під час сесій, дізнаючись ваші вподобання, відгуки та контекст проєкту
 
 ### Архітектура Auto Memory
 
@@ -424,11 +424,11 @@ Auto memory — це постійний каталог, куди Claude авто
 graph TD
     A["Claude Session Starts"] --> B["Load MEMORY.md<br/>(first 200 lines / 25KB)"]
     B --> C["Session Active"]
-    C --> D["Claude discovers<br/>patterns & insights"]
+    C --> D["Claude learns<br/>preferences & feedback"]
     D --> E{"Write to<br/>auto memory"}
     E -->|General notes| F["MEMORY.md"]
-    E -->|Topic-specific| G["debugging.md"]
-    E -->|Topic-specific| H["api-conventions.md"]
+    E -->|Topic-specific| G["prefers-pnpm.md"]
+    E -->|Topic-specific| H["release-checklist.md"]
     C --> I["On-demand load<br/>topic files"]
     I --> C
 
@@ -448,9 +448,9 @@ graph TD
 ```
 ~/.claude/projects/<project>/memory/
 ├── MEMORY.md              # Точка входу (перші 200 рядків / 25 КБ завантажуються при запуску)
-├── debugging.md           # Тематичний файл (завантажується за потребою)
-├── api-conventions.md     # Тематичний файл (завантажується за потребою)
-└── testing-patterns.md    # Тематичний файл (завантажується за потребою)
+├── prefers-pnpm.md        # Тематичний файл (завантажується за потребою)
+├── release-checklist.md   # Тематичний файл (завантажується за потребою)
+└── team-contacts.md       # Тематичний файл (завантажується за потребою)
 ```
 
 ### Вимога до версії
@@ -466,13 +466,13 @@ npm install -g @anthropic-ai/claude-code@latest
 За замовчуванням auto memory зберігається в `~/.claude/projects/<project>/memory/`. Ви можете змінити це розташування за допомогою налаштування `autoMemoryDirectory` (доступне з **v2.1.74**):
 
 ```jsonc
-// В ~/.claude/settings.json або .claude/settings.local.json (тільки налаштування користувача/локальні)
+// У будь-якому файлі налаштувань: користувача, проєкту, локальному або managed policy
 {
   "autoMemoryDirectory": "/path/to/custom/memory/directory"
 }
 ```
 
-> **Примітка**: `autoMemoryDirectory` можна встановити лише в налаштуваннях рівня користувача (`~/.claude/settings.json`) або локальних налаштуваннях (`.claude/settings.local.json`), а не в налаштуваннях проєкту чи managed policy.
+> **Примітка**: `autoMemoryDirectory` зчитується з будь-якої області налаштувань: користувача, проєкту, локальної, managed policy або `--settings`. Значення має бути абсолютним шляхом або починатися з `~/`.
 
 Це корисно, коли ви хочете:
 
@@ -777,12 +777,12 @@ Claude не зберіг правило, бо у мене ніде не було
 
 ### Приклад 4: Оновлення пам'яті під час сесії
 
-Ви можете додавати нові правила до пам'яті під час активної сесії Claude Code. Є два способи це зробити:
+Ви можете додавати нові правила до CLAUDE.md під час активної сесії Claude Code (прохання *запам'ятати* щось зберігає це в auto memory, а не в CLAUDE.md). Є два способи це зробити:
 
 #### Метод 1: Прямий запит
 
 ```markdown
-User: Remember that I prefer using React hooks instead of class components
+User: Add this to CLAUDE.md: I prefer using React hooks instead of class components
      for all new components.
 
 Claude: I'm adding that to your memory. Which memory file should this go in?
@@ -1159,12 +1159,14 @@ Claude запропонує обрати, який файл пам'яті оно
 - [Офіційна документація пам'яті](https://code.claude.com/docs/en/memory) — документація Anthropic
 
 ---
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/memory#agents-md
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.288
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.293
 - https://code.claude.com/docs/en/sub-agents#enable-persistent-memory
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/claude-directory
 **Сумісні моделі**: Claude Sonnet 4.6, Claude Opus 4.6, Claude Haiku 4.5

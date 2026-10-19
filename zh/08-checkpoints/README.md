@@ -215,11 +215,11 @@ Claude Code 会自动管理你的 checkpoints：
 
 ```json
 {
-  "autoCheckpoint": true
+  "fileCheckpointingEnabled": true
 }
 ```
 
-- `autoCheckpoint`：是否在每次用户提示后自动创建 checkpoint（默认：`true`）
+- `fileCheckpointingEnabled`：是否在每次编辑前为文件创建快照，以便用 `/rewind` 恢复（默认：`true`）
 
 ## 局限性
 
@@ -293,8 +293,9 @@ Checkpoints 的价值在于让你敢于试错。它让“先试再说”和“�
 
 ---
 
-**最后更新**: 2026 年 10 月 15 日
-**Claude Code 版本**: 2.1.300
+**最后更新**: 2026 年 10 月 18 日
+**Claude Code 版本**: 2.1.302
 **来源**:
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/commands
+- https://code.claude.com/docs/en/settings-reference

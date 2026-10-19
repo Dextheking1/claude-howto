@@ -68,8 +68,8 @@ graph TD
 | `--channels` | 订阅 MCP channel 插件。每一项必须写成 `plugin:<name>@<marketplace>` 的带标签形式；仅写名称会被拒绝 | `claude --channels plugin:discord@my-marketplace` |
 | `--chrome` / `--no-chrome` | 启用 / 禁用 Chrome 浏览器集成 | `claude --chrome` |
 | `--effort` | 设置推理强度 | `claude --effort high` |
-| `--init` / `--init-only` | 运行初始化 hooks | `claude --init` |
-| `--maintenance` | 运行维护 hooks 后退出 | `claude --maintenance` |
+| `--init` / `--init-only` | `--init` 在会话开始前运行初始化（Setup）hooks，仅限打印模式；`--init-only` 运行 Setup 和 `SessionStart` hooks 后退出 | `claude -p --init "query"` |
+| `--maintenance` | 在会话开始前运行维护（Setup）hooks（仅限打印模式） | `claude -p --maintenance "query"` |
 | `--disable-slash-commands` | 禁用所有 skills 和 slash commands | `claude --disable-slash-commands` |
 | `--no-session-persistence` | 禁用会话保存（打印模式） | `claude -p --no-session-persistence "query"` |
 
@@ -117,14 +117,14 @@ claude -p "列出待办事项" | grep "URGENT"
 ### 模型选择示例
 
 ```bash
-# 复杂任务使用 Opus 4.6
+# 复杂任务使用 Opus 5.5
 claude --model opus "设计一个缓存策略"
 
 # 快速任务使用 Haiku（自 v2.1.293 起在 Anthropic API 上为 Haiku 5.5；在 Bedrock、Vertex 和 Foundry 上为 Haiku 4.5）
 claude --model haiku -p "格式化这个 JSON"
 
 # 使用完整模型名
-claude --model claude-sonnet-4-6-20250929 "审查这段代码"
+claude --model claude-sonnet-4-6 "审查这段代码"
 
 # 带后备模型以提升稳定性
 claude -p --model opus --fallback-model sonnet "分析架构"
@@ -493,8 +493,8 @@ claude --tools "Read,Grep,Glob" -p "inspect the codebase"
 # 获取结构化分析结果
 claude -p --output-format json "analyze this code and return findings"
 
-# 配合 jq 处理
-claude -p --output-format json "list functions" | jq '.functions[]'
+# 配合 jq 处理（schema 输出位于 .structured_output）
+claude -p --output-format json --json-schema "$SCHEMA" "list functions" | jq '.structured_output.functions[]'
 
 # 在脚本中使用
 result=$(claude -p --output-format json "summarize changes")
@@ -502,30 +502,32 @@ result=$(claude -p --output-format json "summarize changes")
 
 ### jq 解析示例
 
+响应文本位于 `.result`；配合 `--json-schema` 时，校验后的对象位于 `.structured_output`（下文的 `$SCHEMA` 表示定义了各过滤器所读字段的 schema）：
+
 ```bash
-# 提取特定字段
-claude -p --output-format json "analyze repo" | jq '.summary'
+# 提取响应文本
+claude -p --output-format json "analyze repo" | jq -r '.result'
 
 # 过滤数组元素
-claude -p --output-format json "find bugs" | jq '.bugs[] | select(.severity=="high")'
+claude -p --output-format json --json-schema "$SCHEMA" "find bugs" | jq '.structured_output.bugs[] | select(.severity=="high")'
 
 # 提取多个字段
-claude -p --output-format json "analyze" | jq '{summary, risk, recommendations}'
+claude -p --output-format json --json-schema "$SCHEMA" "analyze" | jq '.structured_output | {summary, risk, recommendations}'
 
 # 转成 CSV
-claude -p --output-format json "list files" | jq -r '.files[] | [.name, .size] | @csv'
+claude -p --output-format json --json-schema "$SCHEMA" "list files" | jq -r '.structured_output.files[] | [.name, .size] | @csv'
 
 # 条件处理
-claude -p --output-format json "check status" | jq 'if .ok then "pass" else "fail" end'
+claude -p --output-format json --json-schema "$SCHEMA" "check status" | jq 'if .structured_output.ok then "pass" else "fail" end'
 
 # 提取嵌套值
-claude -p --output-format json "inspect" | jq '.details.metrics.coverage'
+claude -p --output-format json --json-schema "$SCHEMA" "inspect" | jq '.structured_output.details.metrics.coverage'
 
 # 处理整个数组
-claude -p --output-format json "find todos" | jq '.todos | length'
+claude -p --output-format json --json-schema "$SCHEMA" "find todos" | jq '.structured_output.todos | length'
 
 # 转换输出
-claude -p --output-format json "review" | jq '{issues: [.issues[] | {file, line, message}]}'
+claude -p --output-format json --json-schema "$SCHEMA" "review" | jq '.structured_output | {issues: [.issues[] | {file, line, message}]}'
 ```
 
 ## 模型
@@ -643,9 +645,11 @@ claude --working-directory ./backend --mcp-config ./mcp.json
 
 ---
 
-**最后更新**: 2026 年 10 月 15 日
-**Claude Code 版本**: 2.1.300
+**最后更新**: 2026 年 10 月 18 日
+**Claude Code 版本**: 2.1.302
 **来源**:
 - https://code.claude.com/docs/en/cli-reference
+- https://code.claude.com/docs/en/headless
+- https://platform.claude.com/docs/en/about-claude/models/overview
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/remote-control

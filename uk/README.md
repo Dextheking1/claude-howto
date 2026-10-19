@@ -187,7 +187,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 11-13 годин для повного шляху. Але ви отримаєте цінність за 15 хвилин — просто скопіюйте шаблон слеш-команди та спробуйте.
 
 **Чи працює це з Claude Sonnet / Haiku / Opus?**
-Так. Усі шаблони працюють з Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5.
+Так. Усі шаблони працюють з Claude Fable 5, Claude Opus 5, Claude Sonnet 5.5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5.
 
 **Чи можна долучитися?**
 Звичайно. Див. [CONTRIBUTING.md](CONTRIBUTING.md) для настанов. Ми вітаємо нові приклади, виправлення, покращення документації та шаблони спільноти.
@@ -262,16 +262,15 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 cp 04-subagents/*.md .claude/agents/
 
 # MCP
-export GITHUB_TOKEN="token"
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Хуки
 mkdir -p ~/.claude/hooks
 cp 06-hooks/*.sh ~/.claude/hooks/
 chmod +x ~/.claude/hooks/*.sh
 
-# Плагіни
-/plugin install pr-review
+# Плагіни (завантажити локальний плагін з кореня репозиторію)
+claude --plugin-dir ./07-plugins/pr-review
 
 # Контрольні точки (увімкнені за замовчуванням)
 # Див. 08-checkpoints/README.md
@@ -403,11 +402,10 @@ cp 04-subagents/*.md /path/to/project/.claude/agents/
 **Встановлення**:
 ```bash
 # Встановити змінні оточення
-export GITHUB_TOKEN="your_token"
 export DATABASE_URL="postgresql://..."
 
 # Додати MCP-сервер через CLI
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 ```
 
 **Використання**: MCP-інструменти автоматично доступні Claude після налаштування
@@ -422,7 +420,7 @@ claude mcp add github -- npx -y @modelcontextprotocol/server-github
 **Що**: Shell-команди на основі подій, що виконуються автоматично у відповідь на події Claude Code
 
 **Приклади**:
-- `format-code.sh` — Автоформатування коду перед записом
+- `format-code.sh` — Автоформатування коду після запису
 - `pre-commit.sh` — Запуск тестів перед комітами
 - `security-scan.sh` — Сканування на проблеми безпеки
 - `log-bash.sh` — Логування всіх bash-команд
@@ -462,9 +460,10 @@ chmod +x ~/.claude/hooks/*.sh
 
 **Встановлення**:
 ```bash
-/plugin install pr-review
-/plugin install devops-automation
-/plugin install documentation
+# З кореня репозиторію (цей репозиторій не має marketplace, тому /plugin install не підходить)
+claude --plugin-dir ./07-plugins/pr-review
+claude --plugin-dir ./07-plugins/devops-automation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 **Використання**: Використовуйте пакетні слеш-команди та функції
@@ -494,7 +493,8 @@ chmod +x ~/.claude/hooks/*.sh
 # 2. Відновити розмову
 # 3. Відновити код
 # 4. Підсумувати звідси
-# 5. Скасувати
+# 5. Підсумувати до цього місця
+# 6. Скасувати
 ```
 
 </details>
@@ -659,10 +659,13 @@ Claude:
 
 ---
 
-**Останнє оновлення**: 19 вересня 2026
-**Версія Claude Code**: 2.1.278
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/model-config
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
 **Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

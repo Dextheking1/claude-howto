@@ -59,7 +59,7 @@ graph TB
 | **Level 2: Instructions** | When Skill is triggered | Under 5k tokens | SKILL.md body with instructions and guidance |
 | **Level 3+: Resources** | As needed | Effectively unlimited | Bundled files executed via bash without loading contents into context |
 
-This means you can install many Skills without context penalty—Claude only knows each Skill exists and when to use it until actually triggered.
+This keeps Skills lightweight—Claude only knows each Skill exists and when to use it until actually triggered—but not free: every listed skill adds its description to context on every turn.
 
 ## Skill Loading Process
 
@@ -99,7 +99,7 @@ When skills share the same name across levels, higher-priority locations win: **
 
 ### Automatic Discovery
 
-**Nested directories**: When you work with files in subdirectories, Claude Code automatically discovers skills from nested `.claude/skills/` directories. For example, if you're editing a file in `packages/frontend/`, Claude Code also looks for skills in `packages/frontend/.claude/skills/`. This supports monorepo setups where packages have their own skills. As of v2.1.178, when a skill name collides across nested `.claude/skills/` directories, the directory **closest to your current working directory wins** — a package-level skill overrides a repo-root skill of the same name.
+**Nested directories**: When you work with files in subdirectories, Claude Code automatically discovers skills from nested `.claude/skills/` directories. For example, if you're editing a file in `packages/frontend/`, Claude Code also looks for skills in `packages/frontend/.claude/skills/`. This supports monorepo setups where packages have their own skills. When a nested skill has the same name as a repo-root skill, **both load**: for a `deploy` skill at the root and in `apps/web/.claude/skills/`, `/deploy` runs the root one and `/apps/web:deploy` runs the nested one.
 
 **`--add-dir` directories**: Skills from directories added via `--add-dir` are loaded automatically with live change detection. Any edits to skill files in those directories take effect immediately without restarting Claude Code.
 
@@ -140,7 +140,7 @@ Show concrete examples of using this Skill.
 
 ### Recommended Fields
 
-- **description** (recommended): what the Skill does AND when to use it. If omitted, Claude Code uses the first paragraph of markdown content. The combined `description` + `when_to_use` text is truncated at **1,536 characters** in the skill listing (configurable via `skillListingMaxDescChars`). This is what Claude matches on to decide when to activate the skill.
+- **description** (recommended): what the Skill does AND when to use it. If omitted, Claude Code uses the first non-empty line of markdown content. The combined `description` + `when_to_use` text is truncated at **1,536 characters** in the skill listing (configurable via `skillListingMaxDescChars`). This is what Claude matches on to decide when to activate the skill.
 - **name** (optional): defaults to the skill's **directory name**. When supplied, it sets the display name — lowercase letters, numbers, hyphens only (max 64 characters) is the recommended, portable form (required for claude.ai and the Skills API). Claude Code itself (v2.1.299+) skips a skill or command whose name contains hidden, direction-changing or blank-like characters, `<` or `>`, or exceeds 256 characters, until you rename it. In Claude Code, `anthropic-skills` and `synced` are reserved and don't load outside a plugin; the stricter ban on "anthropic" or "claude" applies to skills uploaded to claude.ai or the Skills API. For plugin skills, `name` also sets the last segment of the command.
 
 All SKILL.md frontmatter fields are optional; `description` is the only one that is recommended.
@@ -183,14 +183,14 @@ paths: "src/api/**/*.ts"               # Glob patterns limiting when skill activ
 | `allowed-tools` | Comma-separated list of tools the skill may use without permission prompts. |
 | `disallowed-tools` | Comma-separated list of tools to remove while the skill is active (complements `allowed-tools`). Added v2.1.152. |
 | `model` | Model override while the skill is active (e.g., `opus`, `sonnet`). |
-| `effort` | Effort level override while the skill is active: `low`, `medium`, `high`, `xhigh`, or `max` — all five are supported on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7. The default effort is `high` on every model that supports effort, except Opus 5.5, Sonnet 5.5, and Haiku 5.5, which default to `medium`, and Opus 4.7, which defaults to `xhigh`. |
+| `effort` | Effort level override while the skill is active: `low`, `medium`, `high`, `xhigh`, or `max` — all five are supported on Fable 5.1, Fable 5, Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, and Opus 4.7. The default effort is `high` on every model that supports effort, except Opus 5.5, Sonnet 5.5, and Haiku 5.5, which default to `medium`, and Opus 4.7, which defaults to `xhigh`. |
 | `context` | `fork` to run the skill in a forked subagent context with its own context window. |
 | `agent` | Subagent type when `context: fork` (e.g., `Explore`, `Plan`, `general-purpose`). |
 | `background` | Only meaningful with `context: fork`. Defaults to `true` for `context: fork` skills, so they run in the background; set `false` to run them in the foreground. Added v2.1.218. |
 | `shell` | Shell used for `` !`command` `` substitutions and scripts: `bash` (default) or `powershell`. |
 | `hooks` | Hooks registered when the skill is invoked (same format as settings hooks; any event). They stay active for the rest of the session. |
 | `paths` | Glob patterns that limit when the skill is auto-activated. Comma-separated string or YAML list. Same format as path-specific rules. |
-| `arguments` | Declares the arguments the skill accepts, for autocomplete and argument substitution. |
+| `arguments` | Declares the arguments the skill accepts, for autocomplete and argument substitution. Only the first 64 names, each up to 64 characters, are filled in (v2.1.301). |
 | `metadata` | Free-form key/value map for your own bookkeeping (e.g. `version`, `author`). Claude Code passes it through. |
 | `license` | License identifier for the skill (e.g. `MIT`). |
 | `compatibility` | Free-text compatibility statement, up to 500 characters. Claude Code accepts it but does not act on it. |
@@ -284,7 +284,7 @@ Running `/fix-issue 123` replaces `$ARGUMENTS` with `123`.
 
 ### Stacking Skills
 
-You can stack slash-skills in a single invocation, like `/code-review /fix-issue 123`. As of v2.1.199, this loads ALL leading skills — the first plus up to 5 more — and passes the trailing arguments (`123`) to each; previously only the first skill loaded. If the same skill is invoked more than once, its identical content is de-duplicated (v2.1.202) rather than appended twice.
+You can stack slash-skills in a single invocation at the terminal prompt, like `/write-tests /fix-issue 123`. As of v2.1.199, this loads ALL leading skills — the first plus up to 5 more — and passes the trailing arguments (`123`) to each; previously only the first skill loaded. Expansion stops at a skill that runs as a forked subagent, such as `/code-review`, and through the Agent SDK or `claude -p` only the first skill loads. If the same skill is invoked more than once, its identical content is de-duplicated (v2.1.202) rather than appended twice.
 
 ## Injecting Dynamic Context
 
@@ -808,7 +808,7 @@ Skills support the `` !`command` `` syntax to inject the output of shell command
 }
 ```
 
-When `disableSkillShellExecution` is `true`, any `` !`command` `` markers in a skill are left as literal text instead of being executed — removing the skill-level shell-injection attack surface without disabling skills themselves. Consider combining this with an `allowedTools` allowlist for defense in depth.
+When `disableSkillShellExecution` is `true`, each `` !`command` `` marker in a skill is replaced with `[shell command execution disabled by policy]` instead of being executed — removing the skill-level shell-injection attack surface without disabling skills themselves. Consider combining this with an `allowedTools` allowlist for defense in depth.
 
 ### Hiding bundled skills (`disableBundledSkills`)
 
@@ -848,14 +848,16 @@ Claude Code ships with a set of built-in skills that are always available withou
 | `/claude-api` | Load Claude API/SDK reference; auto-activates on `anthropic`/`@anthropic-ai/sdk` imports |
 | `/dataviz` | Chart and dashboard design guidance with a runnable color-palette validator (v2.1.198) |
 | `/debug [description]` | Troubleshoot current session by reading debug log |
-| `/deep-research <topic>` | Run an in-depth research pass on a topic (explicit invocation only since v2.1.218 — Claude won't trigger this on its own) |
+| `/deep-research <question>` | A bundled **workflow**, not a skill: fans out web searches and synthesizes a cited report (explicit invocation only since v2.1.218 — Claude won't trigger this on its own) |
 | `/fewer-permission-prompts` | Scan transcripts and propose a prioritized allowlist for common read-only tools |
-| `/loop [interval] <prompt>` | Run prompt repeatedly on interval (e.g., `/loop 5m check the deploy`) |
+| `/loop [interval] [prompt]` | Run prompt repeatedly on interval (e.g., `/loop 5m check the deploy`) |
 | `/run` *(v2.1.145+)* | Launch this project's app to see a change running — looks for a project skill, otherwise falls back to built-in patterns per project type |
 | `/run-skill-generator` *(v2.1.145+)* | Teach `/run`/`/verify` how to handle a specific project by generating a per-project skill |
 | `/code-review [effort]` | Review the current diff for correctness bugs at a chosen effort level (e.g. `/code-review high`); pass `--comment` to post findings as inline PR comments. A distinct skill from `/simplify` (quality/reuse cleanups), which was split back out in v2.1.154. (explicit invocation only since v2.1.215 — Claude won't trigger this on its own) Since v2.1.218 it runs as a background subagent, so review work no longer fills your conversation and stacked slash commands stay its review target. |
 | `/simplify` | Cleanup-only review — reuse, simplification, efficiency, altitude — and applies the fixes. Split back out from `/code-review` in v2.1.154 |
 | `/verify` *(v2.1.145+)* | Build, run, and observe the app to confirm a fix works (not just that tests pass) (explicit invocation only since v2.1.215 — Claude won't trigger this on its own) |
+
+For automatic reviews on GitHub pull requests, Team and Enterprise organizations can turn on [managed Code Review](https://code.claude.com/docs/en/code-review).
 
 > **Note**: If your project or user skills include one named `verify`, Claude runs it right before committing, except for docs-only and tests-only commits (v2.1.286).
 
@@ -904,8 +906,8 @@ Once you start building skills seriously, two things become essential: a library
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/slash-commands
@@ -922,4 +924,6 @@ Once you start building skills seriously, two things become essential: a library
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/memory#write-effective-instructions
 - https://code.claude.com/docs/en/memory
+- https://code.claude.com/docs/en/changelog#2-1-301
+- https://code.claude.com/docs/en/code-review
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

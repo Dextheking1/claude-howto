@@ -44,7 +44,7 @@ fi
 # Check for required context in certain operations
 if echo "$PROMPT" | grep -qi "refactor"; then
   if [ ! -d "tests" ] && [ ! -d "test" ]; then
-    printf '{"additionalContext": "Warning: Refactoring without tests may be risky. Consider writing tests first."}'
+    printf '{"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": "Warning: Refactoring without tests may be risky. Consider writing tests first."}}'
   fi
 fi
 

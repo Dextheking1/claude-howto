@@ -253,7 +253,7 @@ pr-review/
 
 **命令**：`/review-pr`、`/check-security`、`/check-tests`
 
-**安装**：`/plugin install pr-review`
+**安装**：`claude --plugin-dir ./07-plugins/pr-review` （在仓库根目录运行）
 
 ### DevOps Automation 插件（15 个文件）
 
@@ -286,7 +286,7 @@ devops-automation/
 
 **命令**：`/deploy`、`/rollback`、`/status`、`/incident`
 
-**安装**：`/plugin install devops-automation`
+**安装**：`claude --plugin-dir ./07-plugins/devops-automation` （在仓库根目录运行）
 
 ### Documentation 插件（14 个文件）
 
@@ -316,7 +316,7 @@ documentation/
 
 **命令**：`/generate-api-docs`、`/generate-readme`、`/sync-docs`、`/validate-docs`
 
-**安装**：`/plugin install documentation`
+**安装**：`claude --plugin-dir ./07-plugins/documentation` （在仓库根目录运行）
 
 **补充**：`README.md` - 插件总览与使用指南
 
@@ -343,7 +343,7 @@ documentation/
 # 如需回退，按两次 Esc，或使用：
 /rewind
 # 然后选择：恢复代码和对话、恢复对话、
-# 恢复代码、从这里开始总结，或算了
+# 恢复代码、从这里开始总结、总结到这里，或算了
 ```
 
 **使用场景**：
@@ -395,7 +395,7 @@ documentation/
 - **plan**：只读分析，不做修改
 - **auto**：所有操作都执行，附带后台安全检查 — 由分类器审查命令和受保护目录的写入（通过 `autoMode` 设置对象配置）
 - **dontAsk**：只允许预先批准的工具 — 任何本来会弹出提示的调用都会被自动拒绝。Claude 只运行 `permissions.allow` 匹配项、只读 Bash 命令，以及被 `PreToolUse` hook 批准的调用
-- **bypassPermissions**：全部接受（需要 `--dangerously-skip-permissions`）
+- **bypassPermissions**：全部接受（使用 `--permission-mode bypassPermissions` 或等效的 `--dangerously-skip-permissions` 启用）
 
 #### Headless Mode（`claude -p`）
 - CI/CD 集成
@@ -668,14 +668,14 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # 或直接安装完整插件
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ### DevOps 与部署
 
 ```bash
 # 安装插件（包含全部功能）
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ### 文档
@@ -691,7 +691,7 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # 或直接安装完整插件
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### 团队规范
@@ -894,8 +894,8 @@ claude -p "Run tests and report results"
 
 ---
 
-**最后更新**：2026 年 10 月 15 日
-**Claude Code 版本**：2.1.300
+**最后更新**：2026 年 10 月 18 日
+**Claude Code 版本**：2.1.302
 **总示例数**：100+ 文件
 **分类数**：10 个功能
 **Hooks**：8 个自动化脚本
@@ -907,3 +907,6 @@ claude -p "Run tests and report results"
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/permission-modes

@@ -100,7 +100,7 @@ Khi skills chia sẻ cùng tên qua các cấp, vị trí ưu tiên cao hơn th�
 
 **Thư mục `--add-dir`**: Skills từ các thư mục được thêm qua `--add-dir` được tải tự động với phát hiện thay đổi trực tiếp. Bất kỳ chỉnh sửa nào cho các file skill trong các thư mục đó có hiệu lực ngay lập tức mà không cần khởi động lại Claude Code.
 
-**Ngân sách description**: Các mô tả Skill (metadata cấp 1) được giới hạn ở **2% của cửa sổ bối cảnh** (fallback: **16,000 ký tự**). Nếu bạn có nhiều skills được cài đặt, một số có thể bị loại bỏ. Chạy `/context` để kiểm tra các cảnh báo. Ghi đè ngân sách với biến môi trường `SLASH_COMMAND_TOOL_CHAR_BUDGET`.
+**Ngân sách description**: Các mô tả Skill (metadata cấp 1) được giới hạn ở **1% của cửa sổ bối cảnh** (fallback: **8,000 ký tự**). Nếu bạn có nhiều skills được cài đặt, một số có thể bị loại bỏ. Chạy `/context` để kiểm tra các cảnh báo. Ghi đè ngân sách với biến môi trường `SLASH_COMMAND_TOOL_CHAR_BUDGET`.
 
 ## Tạo Skills Tùy Chỉnh
 
@@ -135,7 +135,7 @@ Hiển thị các ví dụ cụ thể về việc sử dụng Skill này.
 
 ### Các Trường Khuyến Nghị
 
-- **description** (khuyến nghị): những gì Skill làm VÀ khi nào sử dụng nó. Nếu bỏ trống, Claude Code dùng đoạn văn đầu tiên của nội dung markdown. Nội dung `description` + `when_to_use` gộp lại bị cắt ở **1.536 ký tự** trong danh sách skill (có thể điều chỉnh qua `skillListingMaxDescChars`). Đây là nội dung Claude đối chiếu để quyết định khi nào kích hoạt skill.
+- **description** (khuyến nghị): những gì Skill làm VÀ khi nào sử dụng nó. Nếu bỏ trống, Claude Code dùng dòng không trống đầu tiên của nội dung markdown. Nội dung `description` + `when_to_use` gộp lại bị cắt ở **1.536 ký tự** trong danh sách skill (có thể điều chỉnh qua `skillListingMaxDescChars`). Đây là nội dung Claude đối chiếu để quyết định khi nào kích hoạt skill.
 - **name** (tùy chọn): mặc định lấy theo **tên thư mục** của skill. Khi được khai báo, nó đặt tên hiển thị — chỉ chữ thường, số, gạch ngang (tối đa 64 ký tự) là dạng được khuyến nghị và có tính di động (bắt buộc với claude.ai và Skills API). Bản thân Claude Code (v2.1.299+) bỏ qua một skill hoặc lệnh có tên chứa ký tự ẩn, ký tự đổi hướng văn bản hoặc ký tự giống khoảng trắng, `<` hoặc `>`, hoặc dài quá 256 ký tự, cho đến khi bạn đổi tên nó. Trong Claude Code, `anthropic-skills` và `synced` là tên dành riêng và không được tải bên ngoài plugin; quy tắc chặt hơn cấm "anthropic" hoặc "claude" áp dụng cho các skill được tải lên claude.ai hoặc Skills API. Với skill trong plugin, `name` cũng đặt phân đoạn cuối của lệnh.
 
 Mọi trường frontmatter trong SKILL.md đều là tùy chọn; `description` là trường duy nhất được khuyến nghị.
@@ -411,7 +411,7 @@ Một skill tạo ra các hình ảnh hóa HTML tương tác:
 
 **File:** `~/.claude/skills/codebase-visualizer/SKILL.md`
 
-```yaml
+````yaml
 ---
 name: codebase-visualizer
 description: Generate an interactive collapsible tree visualization of your codebase. Use when exploring a new repo, understanding project structure, or identifying large files.
@@ -438,7 +438,7 @@ This creates `codebase-map.html` and opens it in your default browser.
 - **File sizes**: Displayed next to each file
 - **Colors**: Different colors for different file types
 - **Directory totals**: Shows aggregate size of each folder
-```
+````
 
 Script Python được gói thực hiện công việc nặng trong khi Claude xử lý điều phối.
 
@@ -762,7 +762,7 @@ Claude Code được gửi với một số skills được tích hợp sẵn lu
 | `/simplify` | Review các file đã thay đổi để tái sử dụng, chất lượng, và hiệu quả; tạo ra 3 tác nhân review song song |
 | `/batch <instruction>` | Điều phối các thay đổi song song quy mô lớn qua codebase sử dụng git worktrees |
 | `/debug [description]` | Khắc phục sự cố phiên hiện tại bằng cách đọc debug log |
-| `/loop [interval] <prompt>` | Chạy prompt lặp lại trên khoảng thời gian (ví dụ: `/loop 5m check the deploy`) |
+| `/loop [interval] [prompt]` | Chạy prompt lặp lại trên khoảng thời gian (ví dụ: `/loop 5m check the deploy`) |
 | `/claude-api` | Tải tài liệu tham khảo Claude API/SDK; tự động kích hoạt trên các imports `anthropic`/`@anthropic-ai/sdk` |
 
 Các skills này có sẵn ngay lập tức và không cần được cài đặt hoặc cấu hình. Chúng theo cùng định dạng SKILL.md như các skills tùy chỉnh.
@@ -810,8 +810,8 @@ Khi bạn bắt đầu xây dựng skills một cách nghiêm túc, hai điều 
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/hooks#hooks-in-skills-and-agents
@@ -821,4 +821,6 @@ Khi bạn bắt đầu xây dựng skills một cách nghiêm túc, hai điều 
 - https://code.claude.com/docs/en/skills#pre-approve-tools-for-a-skill
 - https://code.claude.com/docs/en/memory#write-effective-instructions
 - https://code.claude.com/docs/en/memory
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/commands
 **Các Mô Hình Tương Thích**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

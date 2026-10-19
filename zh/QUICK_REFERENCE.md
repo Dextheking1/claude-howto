@@ -97,7 +97,7 @@ chmod +x ~/.claude/hooks/*.sh
 # plan             - 只读分析，不做修改
 # dontAsk          - 只运行预先批准的工具，其余一律拒绝
 # auto             - 后台分类器自动决定权限
-# bypassPermissions - 全部接受（需要 --dangerously-skip-permissions）
+# bypassPermissions - 全部接受（--permission-mode bypassPermissions；--dangerously-skip-permissions 与之等效）
 
 # 会话管理
 /resume                # 恢复之前的对话
@@ -262,8 +262,8 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # 每 5 分钟运行一次命令
 /loop 5m /check-status
 
-# 一次性提醒
-/loop 30m "提醒我检查部署"
+# 一次性提醒：直接用自然语言提出（/loop 会一直重复直到取消）
+30 分钟后提醒我检查部署
 ```
 
 ---
@@ -290,9 +290,12 @@ User Home/
 │   ├── skills/                # 个人 skills
 │   ├── hooks/                 # hook 脚本
 │   ├── settings.json          # 用户设置
-│   ├── managed-settings.d/    # 托管设置（企业/组织）
 │   └── CLAUDE.md              # 个人 memory
 └── .claude.json               # 个人 MCP 配置（用户级）
+
+系统目录/                      # macOS /Library/Application Support/ClaudeCode/，Linux /etc/claude-code/，Windows C:\Program Files\ClaudeCode\
+├── managed-settings.json      # 托管设置（企业/组织）
+└── managed-settings.d/        # 托管设置的附加文件（drop-in）
 ```
 
 ---
@@ -399,7 +402,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 | **Task List** | 管理后台任务 | `/tasks`（别名 `/bashes`） |
 | **Auto Memory** | 从对话中自动保存记忆 | Claude 将笔记保存到 `~/.claude/projects/<project>/memory/MEMORY.md`；用 `/memory` 管理 |
 | **Git Worktrees** | 用于并行开发的隔离工作区 | `claude --worktree <name>`（或 `-w`） |
-| **Model Selection** | 在 Fable 5.1、Fable 5、Opus 5、Sonnet 5、Sonnet 4.6、Opus 4.8 和 Haiku 4.5 之间切换 | `/model` 或 `--model` 参数 |
+| **Model Selection** | 在 Fable 5.1、Fable 5、Opus 5、Sonnet 5.5、Sonnet 5、Sonnet 4.6、Opus 4.8 和 Haiku 4.5 之间切换 | `/model` 或 `--model` 参数（在 Anthropic API 上 `sonnet` 指向 Sonnet 5.5，v2.1.284+） |
 | **Agent Teams** | 协调多个 agent 执行任务 | 通过环境变量 `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` 启用（实验性） |
 | **Scheduled Tasks** | 使用 `/loop` 运行周期任务 | `/loop 5m /command` 或 CronCreate 工具 |
 | **Chrome Integration** | 浏览器自动化 | `--chrome` 参数或 `/chrome` 命令 |
@@ -507,8 +510,8 @@ echo $GITHUB_TOKEN
 
 ---
 
-**最后更新**：2026 年 10 月 15 日
-**Claude Code 版本**：2.1.300
+**最后更新**：2026 年 10 月 18 日
+**Claude Code 版本**：2.1.302
 **来源**：
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/commands
@@ -516,3 +519,7 @@ echo $GITHUB_TOKEN
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/agent-teams
 - https://code.claude.com/docs/en/memory#storage-location
+- https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/managed-settings
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/model-config

@@ -44,7 +44,7 @@ Claude Code 目前提供 55+ 个内置命令和约 20 个内置 Skills。你可�
 | `/export [filename]` | 将当前对话导出为文件或剪贴板内容 |
 | `/extra-usage` | 配置额外用量以应对速率限制 |
 | `/fast [on\|off]` | 切换快速模式 |
-| `/feedback` | 提交反馈（别名：`/bug`） |
+| `/feedback` | 提交反馈 |
 | `/help` | 显示帮助 |
 | `/hooks` | 查看 hook 配置 |
 | `/ide` | 管理 IDE 集成 |
@@ -95,7 +95,7 @@ Claude Code 目前提供 55+ 个内置命令和约 20 个内置 Skills。你可�
 | `/batch <instruction>` | 使用 worktree 编排大规模并行修改 |
 | `/claude-api` | 加载 Claude API 参考，便于为项目所用语言编写代码 |
 | `/debug [description]` | 启用调试日志 |
-| `/loop [interval] <prompt>` | 按固定间隔重复运行提示词 |
+| `/loop [interval] [prompt]` | 按固定间隔重复运行提示词 |
 | `/simplify [focus]` | 审查改动文件的代码质量 |
 
 ### 已弃用命令
@@ -180,7 +180,7 @@ description: 这个命令的作用，以及何时使用它
 | 字段 | 作用 | 默认值 |
 |-------|---------|---------|
 | `name` | 命令名（会变成 `/name`） | 目录名 |
-| `description` | 简短说明，帮助 Claude 判断何时使用 | 第一段 |
+| `description` | 简短说明，帮助 Claude 判断何时使用 | 第一个非空行 |
 | `argument-hint` | 自动补全时显示的参数提示 | 无 |
 | `allowed-tools` | 命令可无权限使用的工具 | 继承 |
 | `model` | 指定要使用的模型 | 继承 |
@@ -552,8 +552,8 @@ allowed-tools: Bash(npm *), Bash(git *)
 
 ---
 
-**最后更新**: 2026 年 10 月 15 日
-**Claude Code 版本**: 2.1.300
+**最后更新**: 2026 年 10 月 18 日
+**Claude Code 版本**: 2.1.302
 **来源**:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/output-styles
@@ -562,6 +562,7 @@ allowed-tools: Bash(npm *), Bash(git *)
 - https://code.claude.com/docs/en/permissions#mcp
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/hooks#hook-lifecycle
+- https://code.claude.com/docs/en/skills
 **兼容模型**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
 
 ---

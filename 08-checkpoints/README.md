@@ -54,7 +54,7 @@ When you rewind, you are presented with a menu of six options:
 5. **Summarize up to here** -- The backward counterpart: compress everything *before* the selected point into an AI-generated summary, keeping the messages from this point forward intact. Together with "Summarize from here" this gives you bidirectional, targeted compaction of your context window. No files on disk are changed, and the original messages are preserved in the session transcript.
 6. **Never mind** -- Cancel and return to the current state
 
-> **Note**: After restoring the conversation or summarizing, the original prompt from the selected message is restored into the input field so you can re-send or edit it.
+> **Note**: After restoring the conversation or choosing **Summarize from here**, the original prompt from the selected message is restored into the input field so you can re-send or edit it. Choosing **Summarize up to here** leaves you at the end of the conversation with the input empty.
 
 > **`/clear` is no longer a hard boundary (v2.1.191+)**: `/rewind` can resume from a checkpoint taken *before* you ran `/clear`. Clearing the conversation no longer permanently discards the state that preceded it — you can rewind back across the clear if you need that earlier code or context again.
 
@@ -230,14 +230,14 @@ Two settings govern checkpoint behavior — whether snapshots are taken at all, 
 
 Claude Code keeps snapshots for the **100 most recent checkpoints**; older ones are dropped even inside the retention window.
 
-> **v2.1.117 update**: `cleanupPeriodDays` now governs retention for four on-disk caches, not just checkpoints:
+> **v2.1.117 update**: `cleanupPeriodDays` now governs retention for many on-disk caches, not just checkpoints (a selection below; session transcripts, `file-history/`, `plans/`, `debug/`, `paste-cache/` and more are covered too):
 >
 > - Session checkpoints
 > - `~/.claude/tasks/` — persistent task lists
 > - `~/.claude/shell-snapshots/` — captured shell-environment snapshots
-> - `~/.claude/backups/` — rolling setting / CLAUDE.md backups
+> - `~/.claude/backups/` — earlier versions of `~/.claude.json` (the five newest are kept)
 >
-> A single setting now prunes all four directories uniformly after the same number of days.
+> A single setting now prunes these directories uniformly after the same number of days.
 
 ## Limitations
 
@@ -337,12 +337,13 @@ Remember: checkpoints are not a replacement for git. Use checkpoints for rapid e
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/checkpointing
 - https://code.claude.com/docs/en/settings
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.117
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/commands
+- https://code.claude.com/docs/en/claude-directory
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

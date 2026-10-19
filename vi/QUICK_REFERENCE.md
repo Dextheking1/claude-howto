@@ -97,7 +97,7 @@ chmod +x ~/.claude/hooks/*.sh
 # plan           - Chỉ đọc phân tích, không sửa đổi
 # dontAsk        - Chỉ các tool đã phê duyệt trước được chạy; mọi thứ khác bị từ chối
 # auto           - Bộ phân loại nền quyết định quyền tự động
-# bypassPermissions - Chấp nhận tất cả hành động (yêu cầu --dangerously-skip-permissions)
+# bypassPermissions - Chấp nhận tất cả hành động (--permission-mode bypassPermissions; --dangerously-skip-permissions tương đương)
 
 # Quản lý phiên
 /resume                # Tiếp tục cuộc hội thoại trước
@@ -262,15 +262,15 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Chạy một lệnh mỗi 5 phút
 /loop 5m /check-status
 
-# Nhắc nhở một lần
-/loop 30m "nhắc tôi kiểm tra deploy"
+# Nhắc nhở một lần: hỏi bằng ngôn ngữ tự nhiên (/loop lặp lại cho đến khi bị hủy)
+nhắc tôi kiểm tra deploy sau 30 phút
 ```
 
 ---
 
 ## 📁 Tham Khảo Vị Trí File
 
-```
+```text
 Dự Án Của Bạn/
 ├── .claude/
 │   ├── commands/              # Lệnh slash đặt ở đây
@@ -290,9 +290,12 @@ Home Người Dùng/
 │   ├── skills/                # Skills cá nhân
 │   ├── hooks/                 # Script hooks
 │   ├── settings.json          # Cài đặt người dùng
-│   ├── managed-settings.d/    # Cài đặt được quản lý (doanh nghiệp/tổ chức)
 │   └── CLAUDE.md              # Bộ nhớ cá nhân
 └── .claude.json               # Cấu hình MCP cá nhân (phạm vi người dùng)
+
+Thư mục hệ thống/              # macOS /Library/Application Support/ClaudeCode/, Linux /etc/claude-code/, Windows C:\Program Files\ClaudeCode\
+├── managed-settings.json      # Cài đặt được quản lý (doanh nghiệp/tổ chức)
+└── managed-settings.d/        # Các file bổ sung cho cài đặt được quản lý
 ```
 
 ---
@@ -399,7 +402,7 @@ cp -r 03-skills/code-review-specialist ~/.claude/skills/
 | **Danh Sách Tác Vụ** | Quản lý tác vụ nền | `/tasks` (bí danh `/bashes`) |
 | **Tự Động Bộ Nhớ** | Tự động lưu bộ nhớ từ cuộc hội thoại | Claude lưu ghi chú vào `~/.claude/projects/<project>/memory/MEMORY.md`; quản lý bằng `/memory` |
 | **Git Worktrees** | Không gian làm việc cô lập cho phát triển song song | `claude --worktree <name>` (hoặc `-w`) |
-| **Chọn Mô Hình** | Chuyển đổi giữa Fable 5.1, Fable 5, Opus 5, Sonnet 5, Sonnet 4.6, Opus 4.8 và Haiku 4.5 | `/model` hoặc cờ `--model` |
+| **Chọn Mô Hình** | Chuyển đổi giữa Fable 5.1, Fable 5, Opus 5, Sonnet 5.5, Sonnet 5, Sonnet 4.6, Opus 4.8 và Haiku 4.5 | `/model` hoặc cờ `--model` (`sonnet` trỏ tới Sonnet 5.5 trên Anthropic API, v2.1.284+) |
 | **Đội Tác Nhân** | Phối hợp nhiều tác nhân trên tác vụ | Bật với biến môi trường `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` (thử nghiệm) |
 | **Tác Vụ Định Kỳ** | Tác vụ định kỳ với `/loop` | `/loop 5m /command` hoặc công cụ CronCreate |
 | **Tích Hợp Chrome** | Tự động hóa trình duyệt | Cờ `--chrome` hoặc lệnh `/chrome` |
@@ -507,8 +510,8 @@ Checklist bắt đầu:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/commands
@@ -516,3 +519,7 @@ Checklist bắt đầu:
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/agent-teams
 - https://code.claude.com/docs/en/memory#storage-location
+- https://code.claude.com/docs/en/permission-modes
+- https://code.claude.com/docs/en/managed-settings
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/model-config

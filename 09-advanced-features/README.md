@@ -119,7 +119,7 @@ claude --permission-mode plan
 
 **Keyboard shortcut**:
 - `Shift + Tab` - Toggle permission modes (including plan)
-- `Alt + M` - Toggle permission modes (Windows/Linux)
+- `Alt + M` - Toggle permission modes (Windows only, when the runtime doesn't enable VT input mode)
 
 ### Benefits of Planning Mode
 
@@ -538,9 +538,9 @@ When the classifier is uncertain, auto mode falls back to prompting the user:
 
 This ensures the user always retains control when the classifier cannot confidently approve an action.
 
-### Seeding Auto-Mode-Equivalent Permissions (No Team Plan Required)
+### Seeding Auto-Mode-Equivalent Permissions
 
-If you don't have a Team plan or want a simpler approach without the background classifier, you can seed your `~/.claude/settings.json` with a conservative baseline of safe permission rules. The script starts with read-only and local-inspection rules, then lets you opt into edits, tests, local git writes, package installs, and GitHub write actions only when you want them.
+If you want a simpler approach without the background classifier, you can seed your `~/.claude/settings.json` with a conservative baseline of safe permission rules. The script starts with read-only and local-inspection rules, then lets you opt into edits, tests, local git writes, package installs, and GitHub write actions only when you want them.
 
 **File:** `09-advanced-features/setup-auto-mode-permissions.py`
 
@@ -833,7 +833,7 @@ Permission modes control what actions Claude can take without explicit approval.
 
 > **Note**: The `default` permission mode was renamed to **Manual** in v2.1.200 (across the CLI, `--help`, VS Code, and JetBrains), and a grey ⏸ badge appears in the footer while it is active (v2.1.203). Both `--permission-mode manual` and `--permission-mode default` work, as do `"defaultMode": "manual"` and `"defaultMode": "default"` in settings. Note that the settings key is `permissions.defaultMode` — there is no `permissions.mode` key, so the examples below use the canonical spelling.
 
-Cycle through modes with `Shift+Tab` in the CLI. Set a default with the `--permission-mode` flag or the `permissions.defaultMode` setting. When no permission mode is configured, interactive terminal and VS Code sessions start in auto mode on every plan and provider since v2.1.284 (v2.1.283 did this only on third-party providers such as Bedrock, Google Cloud's Agent Platform, and Foundry, or with telemetry off); `permissions.defaultMode` still overrides it, and a session where auto mode isn't available starts in Manual instead. `claude -p` and the Agent SDK start in `default` when nothing is configured, except that since v2.1.285 `claude -p` and Python Agent SDK sessions on third-party providers or with telemetry off also start in auto mode; `--permission-mode` still overrides it.
+Cycle through modes with `Shift+Tab` in the CLI. Set a default with the `--permission-mode` flag or the `permissions.defaultMode` setting. When no permission mode is configured, interactive terminal and VS Code sessions start in auto mode on every plan and provider since v2.1.284 (v2.1.283 did this only on third-party providers such as Bedrock, Google Cloud's Agent Platform, and Foundry, or with telemetry off); `permissions.defaultMode` still overrides it, and a session where auto mode isn't available starts in Manual instead. Since v2.1.302, `claude -p` and Agent SDK sessions that set no permission mode start in `default` mode on third-party providers, with telemetry off, or on a fresh install; pass `--permission-mode auto` to keep auto mode.
 
 > **Plan mode defers shell commands to the classifier (v2.1.218)**: When [auto mode](#auto-mode) is available and the `useAutoModeDuringPlan` setting is on — which it is by default — the classifier reviews shell commands during planning instead of prompting you. Approved commands run, and rejected ones are blocked. Plan mode still blocks file writes unconditionally.
 
@@ -849,7 +849,7 @@ As of v2.1.160, even `acceptEdits` prompts before writing shell-startup files (`
 
 **Keyboard shortcut**:
 ```bash
-Shift + Tab  # Cycle through all 6 modes
+Shift + Tab  # Cycle default → acceptEdits → plan, then bypassPermissions/auto when available (dontAsk never appears in the cycle)
 ```
 
 **Slash command**:
@@ -1142,13 +1142,15 @@ As of **v2.1.234**, a session blocked on a claude.ai usage limit auto-continues 
 
 ### Session Recap (v2.1.108)
 
-When you return to a session after being away, Claude can show a brief recap of what was accomplished. This is enabled by default for users with telemetry disabled (Bedrock, Vertex, Foundry users).
+When you return to a session after being away, Claude can show a brief recap of what was accomplished. This is on by default for every plan and provider; turn it off from `/config` → **Session recap**.
 
 > **OTEL telemetry — re-enable feedback survey (v2.1.136+)**: Organizations capturing OpenTelemetry data can re-enable Anthropic's session-quality survey by setting `CLAUDE_CODE_ENABLE_FEEDBACK_SURVEY_FOR_OTEL=1`. The survey is off by default in OTEL deployments because it was previously redirected away from telemetry pipelines.
 
 > **OTEL telemetry — `assistant_response` log event (v2.1.193+)**: Claude Code emits a `claude_code.assistant_response` OpenTelemetry log event carrying the model's response text, letting OTEL pipelines capture what Claude said alongside the existing tool/event telemetry.
 
 > **OTEL telemetry — cache and GenAI attributes (v2.1.300)**: `api_request` events add `cache_creation_5m_tokens`/`cache_creation_1h_tokens`, and spans carry GenAI semantic-convention attributes such as `gen_ai.provider.name`.
+
+> **OTEL telemetry — `tool_decision` attributes (v2.1.301)**: `tool_decision` events add `classifier_verdict` and `permission_mode`.
 
 **Control recap behavior:**
 
@@ -1411,26 +1413,22 @@ User: Ctrl+R  # Search history
 
 ### Multi-line Input
 
-For complex queries, use multi-line mode:
+For complex queries, start a new line with `\` + Enter, Option+Enter (macOS), Shift+Enter, or Ctrl+J. There is no `\end` terminator — press Enter to send:
 
 ```bash
-User: \
-> Long complex prompt
-> spanning multiple lines
-> \end
+User: Long complex prompt \
+spanning multiple lines
 ```
 
 **Example:**
 
 ```
-User: \
-> Implement a user authentication system
-> with the following requirements:
-> - JWT tokens
-> - Email verification
-> - Password reset
-> - 2FA support
-> \end
+User: Implement a user authentication system \
+with the following requirements: \
+- JWT tokens \
+- Email verification \
+- Password reset \
+- 2FA support
 
 Claude: [Processes the multi-line request]
 ```
@@ -1459,6 +1457,7 @@ Enable Vi/Vim keybindings for text editing:
 - `w` / `b` / `e` - Move by word
 - `0` / `$` - Move to line start/end
 - `gg` / `G` - Jump to start/end of text
+- `%` - Jump to the matching bracket; combine with `d`, `c`, `y` (v2.1.301)
 
 **Text objects**:
 - `iw` / `aw` - Inner/around word
@@ -1627,11 +1626,12 @@ TUI (Text User Interface) mode renders Claude Code in fullscreen with flicker-fr
 
 ### Enabling TUI Mode
 
-Toggle TUI mode with the `/tui` command or launch with the `--tui` flag:
+Switch renderers with the `/tui` command, or set `CLAUDE_CODE_NO_FLICKER=1` before launching:
 
 ```bash
-/tui          # toggle from within a session
-claude --tui  # start directly in TUI mode
+/tui fullscreen               # switch to fullscreen from within a session
+/tui default                  # switch back to the classic renderer
+CLAUDE_CODE_NO_FLICKER=1 claude  # start directly in fullscreen
 ```
 
 ### Configuration
@@ -1688,11 +1688,11 @@ Channels is a Research Preview feature that pushes events from external services
 ### Subscribing to Channels
 
 ```bash
-# Subscribe to channel plugins at startup
-claude --channels discord,telegram
+# Subscribe to a channel plugin at startup
+claude --channels plugin:telegram@claude-plugins-official
 
-# Subscribe to multiple sources
-claude --channels discord,telegram,imessage,webhooks
+# Subscribe to multiple sources (space-separated)
+claude --channels plugin:discord@claude-plugins-official plugin:telegram@claude-plugins-official
 ```
 
 ### Supported Integrations
@@ -1710,25 +1710,29 @@ Configure channels with the `--channels` flag at startup. For enterprise deploym
 
 ```json
 {
-  "allowedChannelPlugins": ["discord", "telegram"]
+  "channelsEnabled": true,
+  "allowedChannelPlugins": [
+    { "marketplace": "claude-plugins-official", "plugin": "discord" },
+    { "marketplace": "claude-plugins-official", "plugin": "telegram" }
+  ]
 }
 ```
 
-The `allowedChannelPlugins` managed setting controls which channel plugins are permitted across the organization.
+The `allowedChannelPlugins` managed setting controls which channel plugins are permitted across the organization. It replaces the Anthropic-maintained allowlist and requires `channelsEnabled: true`.
 
 ### How It Works
 
 1. MCP servers act as channel plugins that connect to external services
 2. Incoming messages and events are pushed into the active Claude Code session
 3. Claude can read and respond to messages within the session context
-4. Channel plugins must be approved via the `allowedChannelPlugins` managed setting
+4. Channel plugins must be on the Anthropic-maintained allowlist, or on your organization's `allowedChannelPlugins` list when an admin sets one
 5. No polling required — events are pushed in real time
 
 ---
 
 ## Chrome Integration
 
-Chrome Integration connects Claude Code to your Chrome or Microsoft Edge browser for live web automation and debugging. This is a beta feature available since v2.0.73+ (Edge support added in v1.0.36+).
+Chrome Integration connects Claude Code to your Chrome or Microsoft Edge browser for live web automation and debugging. This is a beta feature available since v2.0.73+ (requires Claude in Chrome extension v1.0.36+).
 
 ### Enabling Chrome Integration
 
@@ -1770,7 +1774,7 @@ Claude Code controls the browser in a visible window — you can watch actions h
 
 ### Known limitations
 
-- **Browser support**: Chrome and Edge only — Brave, Arc, and other Chromium browsers are not supported
+- **Browser support**: Chrome and Edge; Claude Code also connects in other Chromium-based browsers such as Brave, Arc, Vivaldi, and Opera
 - **WSL**: Not available in Windows Subsystem for Linux
 - **Third-party providers**: Not supported with Bedrock, Vertex, or Foundry API providers
 - **Service worker idle**: The Chrome extension service worker may go idle during extended sessions
@@ -1961,10 +1965,15 @@ Configure dev server behavior in `.claude/launch.json`:
 
 ```json
 {
-  "command": "npm run dev",
-  "port": 3000,
-  "readyPattern": "ready on",
-  "persistCookies": true
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "my-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000
+    }
+  ]
 }
 ```
 
@@ -1994,9 +2003,10 @@ The Desktop App supports the same permission modes as the CLI:
 
 | Mode | Behavior |
 |------|----------|
-| **Ask permissions** (default) | Review and approve every edit and command |
-| **Auto accept edits** | File edits auto-approved; commands require manual approval |
-| **Plan mode** | Review approach before any changes are made |
+| **Manual** (default) | Review and approve every edit and command |
+| **Accept edits** | File edits auto-approved; commands require manual approval |
+| **Plan** | Review approach before any changes are made |
+| **Auto** | Runs without routine prompts; a background classifier checks actions first |
 | **Bypass permissions** | Automatic execution (sandbox-only, admin-controlled) |
 
 ### Enterprise features
@@ -2248,8 +2258,7 @@ and the sandbox proxy substitutes the real value on the way out to the network.
       "allowWrite": ["/Users/me/project"],
       "allowRead": ["/Users/me/project", "/usr/local/lib"],
       "denyRead": ["/Users/me/.ssh", "/Users/me/.aws"]
-    },
-    "enableWeakerNetworkIsolation": true
+    }
   }
 }
 ```
@@ -2259,7 +2268,7 @@ and the sandbox proxy substitutes the real value on the way out to the network.
 - Bash commands run in a sandboxed environment with restricted filesystem access
 - Network access can be isolated to prevent unintended external connections
 - Works alongside permission rules for defense in depth
-- On macOS, use `sandbox.enableWeakerNetworkIsolation` for network restrictions (full network isolation is not available on macOS)
+- On macOS, Seatbelt blocks all network connections except the one to the sandbox proxy; `sandbox.enableWeakerNetworkIsolation` **weakens** that isolation and is only for tools such as Go CLIs behind a MITM `httpProxyPort` proxy
 
 ### Use Cases
 
@@ -2284,10 +2293,10 @@ Managed Settings enable enterprise administrators to deploy Claude Code configur
 
 ### Managed Drop-ins
 
-Since v2.1.83, administrators can deploy multiple managed settings files into a `managed-settings.d/` directory. Files are merged in alphabetical order, allowing modular configuration across teams:
+Since v2.1.83, administrators can deploy multiple managed settings files into a `managed-settings.d/` directory. Files are merged in alphabetical order, allowing modular configuration across teams. The directory sits next to `managed-settings.json` in the system directory (`/Library/Application Support/ClaudeCode/` on macOS, `/etc/claude-code/` on Linux, `C:\Program Files\ClaudeCode\` on Windows):
 
 ```
-~/.claude/managed-settings.d/
+/etc/claude-code/managed-settings.d/
   00-org-defaults.json
   10-team-policies.json
   20-project-overrides.json
@@ -2297,7 +2306,7 @@ Since v2.1.83, administrators can deploy multiple managed settings files into a 
 
 | Setting | Description |
 |---------|-------------|
-| `disableBypassPermissionsMode` | Prevent users from enabling bypass permissions |
+| `permissions.disableBypassPermissionsMode` | Set to `"disable"` to prevent users from enabling bypass permissions |
 | `availableModels` | Restrict which models users can select |
 | `enforceAvailableModels` | (v2.1.175) When `true`, the `availableModels` allowlist *also* constrains the **Default** model — if the configured default is not in the list, Claude Code falls back to the first allowed model. User and project settings can no longer widen a managed `availableModels` list. |
 | `allowedChannelPlugins` | Control which channel plugins are permitted |
@@ -2315,8 +2324,11 @@ Since v2.1.83, administrators can deploy multiple managed settings files into a 
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>disableBypassPermissionsMode</key>
-  <true/>
+  <key>permissions</key>
+  <dict>
+    <key>disableBypassPermissionsMode</key>
+    <string>disable</string>
+  </dict>
   <key>availableModels</key>
   <array>
     <string>claude-sonnet-4-6</string>
@@ -2332,13 +2344,14 @@ Since v2.1.83, administrators can deploy multiple managed settings files into a 
 
 ### Configuration File Locations
 
-1. **Global config**: `~/.claude/config.json`
-2. **Project config**: `./.claude/config.json`
-3. **User config**: `~/.config/claude-code/settings.json`
+1. **User settings**: `~/.claude/settings.json`
+2. **Project settings**: `.claude/settings.json` (checked in)
+3. **Local project settings**: `.claude/settings.local.json` (not checked in)
+4. **Managed settings**: `managed-settings.json` in the system directory (see [Managed Settings](#managed-settings-enterprise))
 
 ### Complete Configuration Example
 
-**Core advanced features configuration:**
+**Core advanced features configuration** (`.claude/settings.json`):
 
 ```json
 {
@@ -2346,16 +2359,25 @@ Since v2.1.83, administrators can deploy multiple managed settings files into a 
     "defaultMode": "manual"
   },
   "hooks": {
-    "PreToolUse:Edit": "eslint --fix ${file_path}",
-    "PostToolUse:Write": "~/.claude/hooks/security-scan.sh"
-  },
-  "mcp": {
-    "enabled": true,
-    "servers": {
-      "github": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-github"]
-      }
+    "PreToolUse": [
+      { "matcher": "Edit", "hooks": [{ "type": "command", "command": "~/.claude/hooks/eslint-fix.sh" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write", "hooks": [{ "type": "command", "command": "~/.claude/hooks/security-scan.sh" }] }
+    ]
+  }
+}
+```
+
+Hook scripts receive the tool input as JSON on stdin (for example `tool_input.file_path`); there is no `${file_path}` substitution. MCP servers are not a settings key — define them in `.mcp.json` at the project root:
+
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": { "Authorization": "Bearer ${GITHUB_PERSONAL_ACCESS_TOKEN}" }
     }
   }
 }
@@ -2367,30 +2389,19 @@ Since v2.1.83, administrators can deploy multiple managed settings files into a 
 {
   "permissions": {
     "defaultMode": "manual",
-    "allowedTools": ["Bash(git log:*)", "Read"],
-    "disallowedTools": ["Bash(rm -rf:*)"]
+    "allow": ["Bash(git log:*)", "Read"],
+    "deny": ["Bash(rm -rf:*)"]
   },
 
   "hooks": {
-    "PreToolUse": [{ "matcher": "Edit", "hooks": ["eslint --fix ${file_path}"] }],
-    "PostToolUse": [{ "matcher": "Write", "hooks": ["~/.claude/hooks/security-scan.sh"] }],
-    "Stop": [{ "hooks": ["~/.claude/hooks/notify.sh"] }]
-  },
-
-  "mcp": {
-    "enabled": true,
-    "servers": {
-      "github": {
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-github"],
-        "env": {
-          "GITHUB_TOKEN": "${GITHUB_TOKEN}"
-        }
-      }
-    }
+    "PreToolUse": [{ "matcher": "Edit", "hooks": [{ "type": "command", "command": "~/.claude/hooks/eslint-fix.sh" }] }],
+    "PostToolUse": [{ "matcher": "Write", "hooks": [{ "type": "command", "command": "~/.claude/hooks/security-scan.sh" }] }],
+    "Stop": [{ "hooks": [{ "type": "command", "command": "~/.claude/hooks/notify.sh" }] }]
   }
 }
 ```
+
+The GitHub MCP server for this setup goes in `.mcp.json`, as shown above.
 
 ### Additional Per-User Settings
 
@@ -2446,7 +2457,7 @@ export MAX_THINKING_TOKENS=16000
 export CLAUDE_CODE_EFFORT_LEVEL=high   # low, medium, high, xhigh (Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8/4.7), or max — default is high on Opus 5 and Opus 4.8 (supported on Opus 5.5, Sonnet 5.5, Haiku 5.5, Opus 5, Sonnet 5, Opus 4.8, Opus 4.7, Opus 4.6, Sonnet 4.6)
 
 # Feature toggles
-export CLAUDE_CODE_DISABLE_AUTO_MEMORY=true
+export CLAUDE_CODE_DISABLE_AUTO_MEMORY=1    # Disable auto memory (no auto memory files are created or loaded)
 export CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=true
 export CLAUDE_CODE_DISABLE_CRON=1
 export CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS=true
@@ -2454,7 +2465,7 @@ export CLAUDE_CODE_DISABLE_TERMINAL_TITLE=true
 export CLAUDE_CODE_DISABLE_1M_CONTEXT=true
 export CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK=true
 export CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION=false
-export CLAUDE_CODE_ENABLE_TASKS=true
+export CLAUDE_CODE_ENABLE_TASKS=0          # Task tools are the default; 0 reverts to the legacy TodoWrite tool
 export CLAUDE_CODE_SIMPLE=true              # Set by --bare flag
 
 # MCP configuration
@@ -2526,6 +2537,10 @@ export CLAUDE_CODE_DISABLE_FILE_MENTIONS=1                  # (v2.1.299) Don't e
 export CLAUDE_CODE_IDLE_COMPACT_MIN_TOKENS=200000           # (v2.1.299, needs v2.1.290+) Context size at which idle compaction applies. Default 200000, minimum 100000. "idleCompaction": false turns it off.
 export CLAUDE_CODE_GZIP_REQUEST_BODIES=0                    # (v2.1.300) Turn off gzip of large request bodies to api.anthropic.com (use if a TLS-inspecting proxy mishandles them).
 export CLAUDE_CODE_ARTIFACT_PUBLISH_EDITS=0                 # (v2.1.300) Edit artifact files with file tools, then publish as a separate step, instead of in-publish edits.
+
+# Newer variables (v2.1.301-v2.1.302)
+export CLAUDE_CODE_AUTO_MODE_MODEL=claude-sonnet-5-5  # client-side auto mode classifier model (v2.1.302)
+export CLAUDE_CODE_RETRY_WATCHDOG_MAX_USAGE_LIMIT_WAIT_MS=3600000  # stop waiting on far-off usage-limit resets (v2.1.301)
 ```
 
 > **v2.1.223 — `CLAUDE_CODE_DISABLE_1M_CONTEXT` widened**: the variable now holds **every**
@@ -2549,6 +2564,7 @@ The `/config` command provides an interactive menu to toggle settings such as:
 - Permission mode
 - Model selection
 - Dynamic workflow size (v2.1.219) — hidden when `workflowSizeGuideline` is set in a settings file, see [Dynamic Workflows](#dynamic-workflows)
+- Idle compaction (v2.1.302)
 
 In the interactive menu, press Enter or Space to change the selected setting, and Esc to save and close (v2.1.183+).
 
@@ -2563,23 +2579,28 @@ The `key=value` shorthand works in interactive sessions, with `-p`, and in Remot
 
 ### Per-Project Configuration
 
-Create `.claude/config.json` in your project:
+Create `.claude/settings.json` in your project:
 
 ```json
 {
   "hooks": {
-    "PreToolUse": [{ "matcher": "Bash", "hooks": ["npm test && npm run lint"] }]
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "npm test && npm run lint" }] }]
   },
   "permissions": {
     "defaultMode": "manual"
-  },
-  "mcp": {
-    "servers": {
-      "project-db": {
-        "command": "mcp-postgres",
-        "env": {
-          "DATABASE_URL": "${PROJECT_DB_URL}"
-        }
+  }
+}
+```
+
+Put the project's MCP servers in `.mcp.json` at the project root:
+
+```json
+{
+  "mcpServers": {
+    "project-db": {
+      "command": "mcp-postgres",
+      "env": {
+        "DATABASE_URL": "${PROJECT_DB_URL}"
       }
     }
   }
@@ -2730,8 +2751,8 @@ For more information about Claude Code and related features:
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/output-styles
 - https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md
@@ -2774,4 +2795,11 @@ For more information about Claude Code and related features:
 - https://code.claude.com/docs/en/prompt-caching
 - https://code.claude.com/docs/en/agent-teams
 - https://code.claude.com/docs/en/monitoring-usage
+- https://code.claude.com/docs/en/hooks
+- https://code.claude.com/docs/en/managed-settings
+- https://code.claude.com/docs/en/channels
+- https://code.claude.com/docs/en/desktop
+- https://code.claude.com/docs/en/fullscreen
+- https://code.claude.com/docs/en/changelog#2-1-301
+- https://code.claude.com/docs/en/changelog#2-1-302
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

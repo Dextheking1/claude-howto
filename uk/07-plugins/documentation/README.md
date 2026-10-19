@@ -18,7 +18,7 @@
 ## Встановлення
 
 ```bash
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ## Що включено
@@ -117,3 +117,11 @@ export GITHUB_TOKEN="your_github_token"
 - Включайте практичні приклади
 - Регулярно валідуйте
 - Використовуйте шаблони для консистентності
+
+---
+
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
+**Джерела**:
+- https://code.claude.com/docs/en/plugins/cli-reference
+- https://code.claude.com/docs/en/plugins/install

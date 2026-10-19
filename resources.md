@@ -24,6 +24,7 @@
 | Auto Mode | Automatic permission management | [code.claude.com/docs/en/permissions](https://code.claude.com/docs/en/permissions) |
 | Channels | Multi-channel communication | [code.claude.com/docs/en/channels](https://code.claude.com/docs/en/channels) |
 | Voice Dictation | Voice input for Claude Code | [code.claude.com/docs/en/voice-dictation](https://code.claude.com/docs/en/voice-dictation) |
+| Code Review | Managed pull-request reviews through the Claude GitHub App (Team and Enterprise) | [code.claude.com/docs/en/code-review](https://code.claude.com/docs/en/code-review) |
 
 ## Anthropic Engineering Blog
 
@@ -235,10 +236,10 @@ These steps capture the core recommendations for smooth workflows with Claude Co
 | Feature | Description | Learn More |
 |---------|-------------|------------|
 | **Auto Memory** | Claude automatically learns and remembers your preferences across sessions | [Memory Guide](02-memory/) |
-| **Remote Control** | Programmatically control Claude Code sessions from external tools and scripts | [Advanced Features](09-advanced-features/) |
+| **Remote Control** | Continue a local Claude Code session from your phone, browser or the Claude app | [Advanced Features](09-advanced-features/) |
 | **Web Sessions** | Access Claude Code through browser-based interfaces for remote development | [CLI Reference](10-cli/) |
 | **Desktop App** | Native desktop application for Claude Code with enhanced UI | [Claude Code Docs](https://code.claude.com/docs/en/desktop) |
-| **Extended Thinking** | Deep reasoning toggle via `Alt+T`/`Option+T` or `MAX_THINKING_TOKENS` env var | [Advanced Features](09-advanced-features/) |
+| **Extended Thinking** | Deep reasoning toggle via `Alt+T`/`Option+T`; Opus 4.7+, Sonnet 5+, Haiku 5.5 and Fable always use adaptive reasoning, so a fixed `MAX_THINKING_TOKENS` budget does not apply (control depth with `/effort`) | [Advanced Features](09-advanced-features/) |
 | **Permission Modes** | Fine-grained control: manual (formerly default), acceptEdits, plan, auto, dontAsk, bypassPermissions | [Advanced Features](09-advanced-features/) |
 | **7-Tier Memory** | Managed Policy, Project, Project Rules, User, User Rules, Local, Auto Memory | [Memory Guide](02-memory/) |
 | **Hook Events** | 33 events: PreToolUse, PostToolUse, PostToolUseFailure, Stop, StopFailure, SubagentStart, SubagentStop, Notification, Elicitation, and more | [Hooks Guide](06-hooks/) |
@@ -252,8 +253,8 @@ These steps capture the core recommendations for smooth workflows with Claude Co
 | **/run, /verify, /run-skill-generator** | Bundled skills to launch your project, confirm a fix works, and generate per-project run/verify skills (v2.1.145+) | [Skills Guide](03-skills/) |
 
 ---
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/overview
 - https://code.claude.com/docs/en/changelog
@@ -263,4 +264,6 @@ These steps capture the core recommendations for smooth workflows with Claude Co
 - https://github.com/anthropics/claude-code/releases/tag/v2.1.145
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/code-review
 **Compatible Models**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

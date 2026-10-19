@@ -68,8 +68,8 @@ graph TD
 | `--channels` | Đăng ký các plugin kênh MCP. Mỗi mục phải được gắn thẻ `plugin:<name>@<marketplace>`; tên trần sẽ bị từ chối | `claude --channels plugin:discord@my-marketplace` |
 | `--chrome` / `--no-chrome` | Bật/tắt tích hợp trình duyệt Chrome | `claude --chrome` |
 | `--effort` | Đặt mức độ suy nghĩ | `claude --effort high` |
-| `--init` / `--init-only` | Chạy các hooks khởi tạo | `claude --init` |
-| `--maintenance` | Chạy các hooks bảo trì và thoát | `claude --maintenance` |
+| `--init` / `--init-only` | `--init` chạy các hooks khởi tạo (Setup) trước phiên, chỉ ở print mode; `--init-only` chạy Setup và `SessionStart` hooks rồi thoát | `claude -p --init "query"` |
+| `--maintenance` | Chạy các hooks bảo trì (Setup) trước phiên (chỉ ở print mode) | `claude -p --maintenance "query"` |
 | `--disable-slash-commands` | Vô hiệu hóa tất cả skills và lệnh slash | `claude --disable-slash-commands` |
 | `--no-session-persistence` | Vô hiệu hóa lưu session (chế độ in) | `claude -p --no-session-persistence "query"` |
 
@@ -117,14 +117,14 @@ claude -p "list todos" | grep "URGENT"
 ### Ví Dụ Chọn Mô Hình / Model Selection Examples
 
 ```bash
-# Sử dụng Opus 4.6 cho các tác vụ phức tạp
+# Sử dụng Opus 5.5 cho các tác vụ phức tạp
 claude --model opus "design a caching strategy"
 
 # Sử dụng Haiku cho các tác vụ nhanh (Haiku 5.5 trên Anthropic API từ v2.1.293; Haiku 4.5 trên Bedrock, Vertex và Foundry)
 claude --model haiku -p "format this JSON"
 
 # Tên mô hình đầy đủ
-claude --model claude-sonnet-4-6-20250929 "review this code"
+claude --model claude-sonnet-4-6 "review this code"
 
 # Với fallback để đảm bảo độ tin cậy
 claude -p --model opus --fallback-model sonnet "analyze architecture"
@@ -308,7 +308,7 @@ Session gốc vẫn không thay đổi, và fork trở thành một session đ�
 | `--no-chrome` | Tắt tích hợp trình duyệt Chrome | `claude --no-chrome` |
 | `--ide` | Tự động kết nối đến IDE nếu có | `claude --ide` |
 | `--max-turns` | Giới hạn agentic turns (non-interactive) | `claude -p --max-turns 3 "query"` |
-| `--debug` | Bật debug mode với filtering | `claude --debug "api,mcp"` |
+| `--debug` | Bật debug mode với filtering (filter chỉ áp dụng ở dạng `=`) | `claude --debug=api,mcp` |
 | `--enable-lsp-logging` | Bật verbose LSP logging | `claude --enable-lsp-logging` |
 | `--betas` | Beta headers cho API requests | `claude --betas interleaved-thinking` |
 | `--plugin-dir` | Tải plugins từ thư mục (có thể lặp lại) | `claude --plugin-dir ./my-plugin` |
@@ -316,7 +316,7 @@ Session gốc vẫn không thay đổi, và fork trở thành một session đ�
 | `--effort` | Đặt mức độ suy nghĩ | `claude --effort high` |
 | `--bare` | Chế độ tối thiểu (bỏ qua hooks, skills, plugins, MCP, auto memory, CLAUDE.md) | `claude --bare` |
 | `--channels` | Đăng ký các plugin kênh MCP (gắn thẻ `plugin:<name>@<marketplace>`) | `claude --channels plugin:discord@my-marketplace` |
-| `--tmux` | Tạo tmux session cho worktree | `claude --tmux` |
+| `--tmux` | Tạo tmux session cho worktree (yêu cầu `--worktree`) | `claude --worktree feature-x --tmux` |
 | `--fork-session` | Tạo session ID mới khi resume | `claude --resume abc --fork-session` |
 | `--max-budget-usd` | Chi phí tối đa (chế độ in); cũng dừng các subagent chạy nền khi đạt giới hạn (v2.1.217) | `claude -p --max-budget-usd 5.00 "query"` |
 | `--json-schema` | Validate JSON output | `claude -p --json-schema '{"type":"object"}' "q"` |
@@ -328,7 +328,7 @@ Session gốc vẫn không thay đổi, và fork trở thành một session đ�
 claude -p --max-turns 5 "refactor this module"
 
 # Debug API calls
-claude --debug "api" "test query"
+claude --debug=api "test query"
 
 # Bật IDE integration
 claude --ide "help me with this file"
@@ -610,45 +610,49 @@ claude -p --output-format json \
   --json-schema '{"type":"object","properties":{"functions":{"type":"array"},"complexity":{"type":"string"}}}' \
   "analyze main.py and return function list with complexity rating"
 
-# Integrate with jq for processing
-claude -p --output-format json "list all API endpoints" | jq '.endpoints[]'
+# Integrate with jq for processing (schema output lands in .structured_output)
+claude -p --output-format json \
+  --json-schema '{"type":"object","properties":{"endpoints":{"type":"array"}}}' \
+  "list all API endpoints" | jq '.structured_output.endpoints[]'
 
 # Use in scripts
-RESULT=$(claude -p --output-format json "is this code secure? answer with {secure: boolean, issues: []}" < code.py)
-if echo "$RESULT" | jq -e '.secure == false' > /dev/null; then
+RESULT=$(claude -p --output-format json \
+  --json-schema '{"type":"object","properties":{"secure":{"type":"boolean"},"issues":{"type":"array"}},"required":["secure","issues"]}' \
+  "is this code secure?" < code.py)
+if echo "$RESULT" | jq -e '.structured_output.secure == false' > /dev/null; then
   echo "Security issues found!"
-  echo "$RESULT" | jq '.issues[]'
+  echo "$RESULT" | jq '.structured_output.issues[]'
 fi
 ```
 
 ### Ví Dụ jq Parsing
 
-Parse và xử lý JSON output của Claude bằng `jq`:
+Parse và xử lý JSON output của Claude bằng `jq`. Văn bản phản hồi nằm trong `.result`; khi dùng `--json-schema`, đối tượng đã được xác thực nằm trong `.structured_output` (`$SCHEMA` bên dưới đại diện cho một schema định nghĩa các trường mà mỗi filter đọc):
 
 ```bash
-# Extract specific fields
-claude -p --output-format json "analyze this code" | jq '.result'
+# Extract the response text
+claude -p --output-format json "analyze this code" | jq -r '.result'
 
 # Filter array elements
-claude -p --output-format json "list issues" | jq -r '.issues[] | select(.severity=="high")'
+claude -p --output-format json --json-schema "$SCHEMA" "list issues" | jq -r '.structured_output.issues[] | select(.severity=="high")'
 
 # Extract multiple fields
-claude -p --output-format json "describe the project" | jq -r '.{name, version, description}'
+claude -p --output-format json --json-schema "$SCHEMA" "describe the project" | jq -r '.structured_output | {name, version, description}'
 
 # Convert to CSV
-claude -p --output-format json "list functions" | jq -r '.functions[] | [.name, .lineCount] | @csv'
+claude -p --output-format json --json-schema "$SCHEMA" "list functions" | jq -r '.structured_output.functions[] | [.name, .lineCount] | @csv'
 
 # Conditional processing
-claude -p --output-format json "check security" | jq 'if .vulnerabilities | length > 0 then "UNSAFE" else "SAFE" end'
+claude -p --output-format json --json-schema "$SCHEMA" "check security" | jq 'if (.structured_output.vulnerabilities | length) > 0 then "UNSAFE" else "SAFE" end'
 
 # Extract nested values
-claude -p --output-format json "analyze performance" | jq '.metrics.cpu.usage'
+claude -p --output-format json --json-schema "$SCHEMA" "analyze performance" | jq '.structured_output.metrics.cpu.usage'
 
 # Process entire array
-claude -p --output-format json "find todos" | jq '.todos | length'
+claude -p --output-format json --json-schema "$SCHEMA" "find todos" | jq '.structured_output.todos | length'
 
 # Transform output
-claude -p --output-format json "list improvements" | jq 'map({title: .title, priority: .priority})'
+claude -p --output-format json --json-schema "$SCHEMA" "list improvements" | jq '.structured_output.improvements | map({title: .title, priority: .priority})'
 ```
 
 ---
@@ -710,14 +714,14 @@ Từ khóa "ultrathink" trong prompts kích hoạt deep reasoning. Mức `max` e
 | `MAX_THINKING_TOKENS` | Set extended thinking token budget |
 | `CLAUDE_CODE_EFFORT_LEVEL` | Set effort level (`low`/`medium`/`high`/`max`) |
 | `CLAUDE_CODE_SIMPLE` | Minimal mode, set by `--bare` flag |
-| `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | Disable automatic CLAUDE.md updates |
+| `CLAUDE_CODE_DISABLE_AUTO_MEMORY` | Set to `1` to disable auto memory (no auto memory files are created or loaded) |
 | `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` | Disable background task execution |
 | `CLAUDE_CODE_DISABLE_CRON` | Disable scheduled/cron tasks |
 | `CLAUDE_CODE_DISABLE_GIT_INSTRUCTIONS` | Disable git-related instructions |
 | `CLAUDE_CODE_DISABLE_TERMINAL_TITLE` | Disable terminal title updates |
 | `CLAUDE_CODE_DISABLE_1M_CONTEXT` | Disable 1M token context window |
 | `CLAUDE_CODE_DISABLE_NONSTREAMING_FALLBACK` | Disable non-streaming fallback |
-| `CLAUDE_CODE_ENABLE_TASKS` | Enable task list feature |
+| `CLAUDE_CODE_ENABLE_TASKS` | Task tools are the default; set to `0` to revert to the legacy `TodoWrite` tool |
 | `CLAUDE_CODE_TASK_LIST_ID` | Named task directory shared across sessions |
 | `CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION` | Toggle prompt suggestions (`true`/`false`) |
 | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Enable experimental agent teams |
@@ -835,12 +839,14 @@ claude -p --output-format json "query"
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/model-config
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/setup
 - https://code.claude.com/docs/en/troubleshoot-install#command-not-found-claude-after-installation
+- https://code.claude.com/docs/en/headless
+- https://code.claude.com/docs/en/env-vars
 **Các Mô Hình Tương Thích**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5

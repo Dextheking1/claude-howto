@@ -256,7 +256,7 @@ pr-review/
 
 **Commands**: `/review-pr`, `/check-security`, `/check-tests`
 
-**Cài Đặt**: `/plugin install pr-review`
+**Cài Đặt**: `claude --plugin-dir ./07-plugins/pr-review` (từ thư mục gốc của repo)
 
 ---
 
@@ -290,7 +290,7 @@ devops-automation/
 
 **Commands**: `/deploy`, `/rollback`, `/status`, `/incident`
 
-**Cài Đặt**: `/plugin install devops-automation`
+**Cài Đặt**: `claude --plugin-dir ./07-plugins/devops-automation` (từ thư mục gốc của repo)
 
 ---
 
@@ -321,7 +321,7 @@ documentation/
 
 **Commands**: `/generate-api-docs`, `/generate-readme`, `/sync-docs`, `/validate-docs`
 
-**Cài Đặt**: `/plugin install documentation`
+**Cài Đặt**: `claude --plugin-dir ./07-plugins/documentation` (từ thư mục gốc của repo)
 
 **Plus**: `README.md` - Tổng quan plugins và hướng dẫn sử dụng
 
@@ -347,7 +347,7 @@ Lưu trạng thái conversation và khám phá các cách tiếp cận thay th�
 # Để rewind, nhấn Esc hai lần hoặc dùng:
 /rewind
 # Sau đó chọn: Khôi phục code và conversation, Khôi phục conversation,
-# Khôi phục code, Tóm tắt từ đây, hoặc Bỏ qua
+# Khôi phục code, Tóm tắt từ đây, Tóm tắt đến đây, hoặc Bỏ qua
 ```
 
 **Use Cases**:
@@ -397,7 +397,7 @@ Các khả năng nâng cao cho workflows phức tạp.
 - **plan**: Phân tích read-only, không sửa đổi
 - **auto**: Mọi thứ, với kiểm tra an toàn chạy nền — một classifier review các lệnh và thao tác ghi vào thư mục được bảo vệ (cấu hình qua đối tượng settings `autoMode`)
 - **dontAsk**: Chỉ các tool đã được phê duyệt trước — tự động từ chối mọi lệnh gọi lẽ ra sẽ hỏi. Claude chỉ chạy các mục khớp `permissions.allow`, các lệnh Bash chỉ-đọc, và các lệnh gọi được hook `PreToolUse` phê duyệt
-- **bypassPermissions**: Chấp nhận tất cả (yêu cầu `--dangerously-skip-permissions`)
+- **bypassPermissions**: Chấp nhận tất cả (bật bằng `--permission-mode bypassPermissions` hoặc `--dangerously-skip-permissions` tương đương)
 
 ### Headless Mode (`claude -p`)
 - Tích hợp CI/CD
@@ -669,13 +669,13 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # Hoặc cài đặt plugin hoàn chỉnh
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ### DevOps & Triển Khai
 ```bash
 # Cài đặt plugin (bao gồm tất cả)
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ### Tài Liệu
@@ -690,7 +690,7 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Hoặc cài đặt plugin hoàn chỉnh
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### Tiêu Chuẩn Nhóm
@@ -728,7 +728,7 @@ chmod +x ~/.claude/hooks/*.sh
 # Để rewind: nhấn Esc+Esc hoặc dùng:
 /rewind
 # Sau đó chọn: Khôi phục code và conversation, Khôi phục conversation,
-# Khôi phục code, Tóm tắt từ đây, hoặc Bỏ qua
+# Khôi phục code, Tóm tắt từ đây, Tóm tắt đến đây, hoặc Bỏ qua
 
 # Xem 08-checkpoints/README.md cho ví dụ
 ```
@@ -876,8 +876,8 @@ Muốn thêm ví dụ nữa? Theo cấu trúc:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Tổng Số Ví Dụ**: 100+ files
 **Danh Mục**: 10 tính năng
 **Hooks**: 8 scripts tự động hóa
@@ -889,3 +889,6 @@ Muốn thêm ví dụ nữa? Theo cấu trúc:
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/permission-modes

@@ -95,15 +95,17 @@ Loại hook mặc định. Thực thi một lệnh shell và giao tiếp qua JSO
 
 > Thêm vào v2.1.63.
 
-Các endpoints webhook từ xa nhận cùng đầu vào JSON như command hooks. HTTP hooks POST JSON đến URL và nhận phản hồi JSON. HTTP hooks được định tuyến qua sandbox khi sandboxing được bật. Nội suy biến môi trường trong URLs yêu cầu danh sách `allowedEnvVars` rõ ràng để bảo mật.
+Các endpoints webhook từ xa nhận cùng đầu vào JSON như command hooks. HTTP hooks POST JSON đến URL và nhận phản hồi JSON. HTTP hooks được định tuyến qua sandbox khi sandboxing được bật. Nội suy biến môi trường vào giá trị header yêu cầu danh sách `allowedEnvVars` rõ ràng để bảo mật.
 
 ```json
 {
   "hooks": {
     "PostToolUse": [{
-      "type": "http",
-      "url": "https://my-webhook.example.com/hook",
-      "matcher": "Write"
+      "matcher": "Write",
+      "hooks": [{
+        "type": "http",
+        "url": "https://my-webhook.example.com/hook"
+      }]
     }]
   }
 }
@@ -113,7 +115,7 @@ Các endpoints webhook từ xa nhận cùng đầu vào JSON như command hooks.
 - `"type": "http"` -- xác định đây là một HTTP hook
 - `"url"` -- URL endpoint webhook
 - Được định tuyến qua sandbox khi sandbox được bật
-- Yêu cầu danh sách `allowedEnvVars` rõ ràng cho bất kỳ nội suy biến môi trường nào trong URL
+- Yêu cầu danh sách `allowedEnvVars` rõ ràng cho bất kỳ nội suy biến môi trường nào trong giá trị `headers`
 
 ### MCP Tool Hooks / Hooks Công Cụ MCP
 
@@ -165,7 +167,7 @@ Hooks xác thực dựa trên subagent mà spawn một agent chuyên dụng đ�
 
 > **Lưu ý**: Agent hooks là tính năng thử nghiệm và có thể thay đổi.
 
-> **Lưu ý**: Kể từ v2.1.280, agent hooks không chạy trên `PermissionRequest` — câu trả lời của chúng không bao giờ có thể cho phép hoặc từ chối yêu cầu. Hãy dùng hook command, http, mcp_tool, hoặc prompt ở đó.
+> **Lưu ý**: Kể từ v2.1.280, agent hooks không chạy trên `PermissionRequest` — câu trả lời của chúng không bao giờ có thể cho phép hoặc từ chối yêu cầu. Hãy dùng hook command hoặc HTTP trả về đối tượng quyết định ở đó (`ok: false` của prompt hook không có tác dụng trên `PermissionRequest`).
 
 **Các thuộc tính chính:**
 - `"type": "agent"` -- xác định đây là một agent hook
@@ -247,7 +249,7 @@ Chạy sau khi Claude tạo tham số công cụ và trước khi xử lý. Sử
   - `"ask"` nhắc người dùng xác nhận
   - `"defer"` thoát êm để công cụ có thể được tiếp tục sau; `permissionDecisionReason`, `updatedInput` và `additionalContext` đều bị bỏ qua với giá trị này
   - Các quy tắc deny và ask vẫn được đánh giá bất kể hook trả về gì. Khi nhiều hook `PreToolUse` bất đồng, thứ tự ưu tiên là `deny` > `defer` > `ask` > `allow`
-- `permissionDecisionReason`: Giải thích cho quyết định. Hiển thị cho người dùng (không phải Claude) với `"allow"` và `"ask"`; hiển thị cho Claude với `"deny"`; bị bỏ qua với `"defer"`
+- `permissionDecisionReason`: Giải thích cho quyết định. Hiển thị cho người dùng (không phải Claude) với `"ask"`; hiển thị cho Claude với `"deny"`; với `"allow"` và `"defer"`, chỉ được ghi vào debug log
 - `updatedInput`: Đầu vào công cụ thay thế (thay toàn bộ đối tượng đầu vào). Từ v2.1.300, nó được xác thực như đầu vào của chính Claude — các khóa không xác định bị loại bỏ, và đầu vào bị công cụ từ chối sẽ khiến lệnh gọi bị từ chối.
 
 ### PostToolUse
@@ -485,7 +487,7 @@ Tất cả hooks nhận đầu vào JSON qua stdin:
   },
   "tool_use_id": "toolu_01ABC123...",
   "agent_id": "agent-abc123",
-  "agent_type": "main",
+  "agent_type": "security-reviewer",
   "worktree": "/path/to/worktree"
 }
 ```
@@ -499,7 +501,7 @@ Tất cả hooks nhận đầu vào JSON qua stdin:
 | `cwd` | Thư mục làm việc hiện tại |
 | `hook_event_name` | Tên của sự kiện kích hoạt hook |
 | `agent_id` | Định danh của agent chạy hook này |
-| `agent_type` | Loại agent (`"main"`, tên loại subagent, v.v.) |
+| `agent_type` | Tên agent (ví dụ `"Explore"` hoặc `"security-reviewer"`); chỉ có khi phiên dùng `--agent` hoặc hook chạy bên trong subagent |
 | `worktree` | Đường dẫn đến git worktree, nếu agent chạy trong một |
 
 ### Exit Codes
@@ -508,7 +510,7 @@ Tất cả hooks nhận đầu vào JSON qua stdin:
 |-----------|---------|----------|
 | **0** | Thành công | Tiếp tục, phân tích cú pháp JSON stdout |
 | **2** | Lỗi chặn | Chặn thao tác, stderr được hiển thị như lỗi |
-| **Khác** | Lỗi không chặn | Tiếp tục, stderr được hiển thị trong chế độ verbose |
+| **Khác** | Lỗi không chặn | Tiếp tục; thông báo `<hook name> hook error` trong transcript hiển thị dòng đầu tiên của stderr |
 
 ### Đầu Ra JSON (stdout, exit code 0) / JSON Output (stdout, exit code 0)
 
@@ -567,12 +569,12 @@ Tất cả hooks nhận đầu vào JSON qua stdin:
 **Schema Phản Hồi LLM:**
 ```json
 {
-  "decision": "approve",
-  "reason": "All tasks completed successfully",
-  "continue": false,
-  "stopReason": "Task complete"
+  "ok": false,
+  "reason": "Tests were not run after the last edit"
 }
 ```
+
+`ok: true` cho phép hành động; `reason` là bắt buộc khi `ok` là `false`.
 
 ## Ví Dụ / Examples
 
@@ -808,7 +810,7 @@ Các công cụ MCP theo mẫu `mcp__<server>__<tool>`:
 ### Ghi Chú Bảo Mật / Security Notes
 
 - **Cần tin cậy workspace:** Các output commands hook `statusLine` và `fileSuggestion` bây giờ yêu cầu chấp nhận tin cậy workspace trước khi chúng có hiệu lực.
-- **HTTP hooks và biến môi trường:** HTTP hooks yêu cầu danh sách `allowedEnvVars` rõ ràng để sử dụng nội suy biến môi trường trong URLs. Điều này ngăn chặn lộ vô ý các biến môi trường nhạy cảm đến các endpoints từ xa.
+- **HTTP hooks và biến môi trường:** HTTP hooks yêu cầu danh sách `allowedEnvVars` rõ ràng để sử dụng nội suy biến môi trường trong giá trị header. Điều này ngăn chặn lộ vô ý các biến môi trường nhạy cảm đến các endpoints từ xa.
 - **Phân cấp settings được quản lý:** Cài đặt `disableAllHooks` bây giờ tôn trọng phân cấp settings được quản lý, nghĩa là settings cấp tổ chức có thể thực thi vô hiệu hóa hook mà người dùng cá nhân không thể ghi đè.
 
 ### Thực Hành Tốt Nhất / Best Practices
@@ -880,8 +882,8 @@ Chỉnh sửa `~/.claude/settings.json` hoặc `.claude/settings.json` với c�
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability

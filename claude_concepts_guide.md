@@ -255,7 +255,7 @@ graph TB
 
 ### Memory Hierarchy in Claude Code (7 Tiers)
 
-Claude Code loads memory from 7 tiers, listed from highest to lowest priority:
+Claude Code loads memory from 7 tiers. CLAUDE.md files are concatenated into context rather than overriding each other, and they load managed → user → project → local (later, more specific files are read last):
 
 ```mermaid
 graph TD
@@ -285,7 +285,7 @@ graph TD
 | 4. User | `~/.claude/CLAUDE.md` | Personal | Medium | Individual | Personal preferences |
 | 5. User Rules | `~/.claude/rules/*.md` | Personal | Medium | Individual | Personal rule modules |
 | 6. Local | `./CLAUDE.local.md` | Local | Low | Not shared | Machine-specific settings |
-| 7. Auto Memory | Automatic | Session | Lowest | Individual | Learned preferences, patterns |
+| 7. Auto Memory | Automatic | Per repository | Lowest | Individual | Learned preferences, patterns |
 
 ### Auto Memory
 
@@ -555,19 +555,19 @@ graph TB
 
 ### Bundled Skills
 
-Claude Code now includes 10 bundled skills available out of the box:
+Claude Code now includes 20 bundled skills available out of the box:
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
 | **Batch** | `/batch` | Run operations across multiple files or items |
-| **Claude API** | `/claude-api` | Interact with the Anthropic API directly |
+| **Claude API** | `/claude-api` | Load Claude API and Managed Agents reference material for your project's language; activates automatically when your code imports `anthropic` or `@anthropic-ai/sdk` |
 | **Code Review** | `/code-review` | Review the current diff for correctness bugs at a chosen effort level. A distinct skill from `/simplify` (quality/reuse cleanups), which was split back out in v2.1.154. Explicit invocation only since v2.1.215 |
 | **Simplify** | `/simplify` | Quality, reuse, and cleanup review — distinct from `/code-review` again since v2.1.154 |
-| **Debug** | `/debug` | Systematic debugging of issues with root cause analysis |
+| **Debug** | `/debug` | Turn on debug logging for the current session and troubleshoot by reading the session debug log |
 | **Fewer Permission Prompts** | `/fewer-permission-prompts` | Scan transcripts and propose a prioritized allowlist for common read-only tools |
 | **Loop** | `/loop` | Schedule recurring tasks on a timer |
 | **Run** | `/run` | Launch and drive the project's app to verify a change (v2.1.145+) |
-| **Run Skill Generator** | `/run-skill-generator` | Scaffold a new skill from a description (v2.1.145+) |
+| **Run Skill Generator** | `/run-skill-generator` | Write a per-project skill that teaches `/run` and `/verify` how to build, launch, and drive your app (v2.1.145+) |
 | **Verify** | `/verify` | Verify that a change actually works (v2.1.145+). Explicit invocation only since v2.1.215 |
 
 These bundled skills are always available and do not require installation or configuration.
@@ -665,7 +665,7 @@ sequenceDiagram
     participant Hooks
     participant Tools as Configured Tools
 
-    User->>Claude: /plugin install pr-review
+    User->>Claude: claude --plugin-dir ./07-plugins/pr-review
     Claude->>Plugin: Download plugin manifest
     Plugin-->>Claude: Return plugin definition
     Claude->>Install: Extract components
@@ -691,39 +691,14 @@ sequenceDiagram
 
 ### Plugin Definition Structure
 
-```yaml
----
-name: plugin-name
-version: "1.0.0"
-description: "What this plugin does"
-author: "Your Name"
-license: MIT
+The manifest is JSON at `.claude-plugin/plugin.json`. Only `name` is required, and unrecognized top-level keys are stripped:
 
-# Plugin metadata
-tags:
-  - category
-  - use-case
-
-# Requirements
-requires:
-  - claude-code: ">=2.1.0"
-
-# Components bundled
-components:
-  - type: commands
-    path: commands/
-  - type: agents
-    path: agents/
-  - type: mcp
-    path: mcp/
-  - type: hooks
-    path: hooks/
-
-# Configuration
-config:
-  auto_load: true
-  enabled_by_default: true
----
+```json
+{
+  "name": "plugin-name",
+  "version": "1.0.0",
+  "description": "What this plugin does"
+}
 ```
 
 ### Plugin Structure
@@ -741,11 +716,13 @@ my-plugin/
 │   ├── specialist-2.md
 │   └── configs/
 ├── skills/
-│   ├── skill-1.md
-│   └── skill-2.md
+│   └── skill-name/
+│       └── SKILL.md
 ├── hooks/
 │   └── hooks.json
 ├── .mcp.json
+├── bin/
+│   └── my-tool
 ├── .lsp.json
 ├── settings.json
 ├── templates/
@@ -862,7 +839,7 @@ graph TD
 1. Create plugin structure with all components
 2. Write `.claude-plugin/plugin.json` manifest
 3. Create `README.md` with documentation
-4. Test locally with `/plugin install ./my-plugin`
+4. Test locally with `claude --plugin-dir ./my-plugin`
 5. Submit to plugin marketplace
 6. Get reviewed and approved
 7. Published on marketplace
@@ -884,7 +861,7 @@ See the three complete plugins in **[07-plugins/](07-plugins/)** — `pr-review/
 
 **With Plugin (2 minutes):**
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 # ✅ Everything installed and configured
 # ✅ Ready to use immediately
 # ✅ Team can reproduce exact setup
@@ -1137,13 +1114,13 @@ Claude Code supports **33 hook events** across five hook types (command, http, m
 | Hook Event | Trigger | Use Cases |
 |------------|---------|-----------|
 | **SessionStart** | Session begins/resumes/clear/compact | Environment setup, initialization |
-| **Setup** | Initial environment setup (one-time per session) | Provision tooling, install deps |
+| **Setup** | Launch with `--init-only`, or `-p` with `--init` / `--maintenance` (not on normal startup) | Provision tooling, install deps |
 | **InstructionsLoaded** | CLAUDE.md or rules file loaded | Validation, transformation, augmentation |
 | **UserPromptSubmit** | User submits prompt | Input validation, prompt filtering |
 | **UserPromptExpansion** | Typed slash command (skill, custom command, MCP prompt) expands into a prompt; can block it | Block or log direct `/command` use, add per-skill context |
 | **PreToolUse** | Before any tool runs | Validation, approval gates, logging |
 | **PermissionRequest** | Permission dialog shown | Auto-approve/deny flows |
-| **PermissionDenied** | User denies a permission prompt | Logging, analytics, policy enforcement |
+| **PermissionDenied** | Auto mode denies a tool call (never on manual denials) | Logging, analytics, policy enforcement |
 | **PostToolUse** | After tool succeeds | Auto-formatting, notifications, cleanup |
 | **PostToolUseFailure** | Tool execution fails | Error handling, logging |
 | **PostToolBatch** | After a batch of tool uses completes | Aggregate reporting, batched validation |
@@ -1164,7 +1141,7 @@ Claude Code supports **33 hook events** across five hook types (command, http, m
 | **PostCompact** | After compaction completes | Post-compact actions |
 | **PreModelSwitch** | Before a requested model switch is applied | Gate or veto model changes |
 | **PostModelSwitch** | After the session's model changes | Log or react to model changes |
-| **WorktreeCreate** | Worktree being created | Environment setup, dependency install |
+| **WorktreeCreate** | Worktree being created | Replace default git worktree creation; must print the worktree path |
 | **WorktreeRemove** | Worktree being removed | Cleanup, resource deallocation |
 | **Elicitation** | MCP server requests user input | Input validation |
 | **ElicitationResult** | User responds to elicitation | Response processing |
@@ -1252,12 +1229,13 @@ Esc + Esc
 /rewind
 ```
 
-When you select a checkpoint, you choose from five options:
+When you select a checkpoint, you choose from six options:
 1. **Restore code and conversation** -- Revert both to that point
 2. **Restore conversation** -- Rewind messages, keep current code
 3. **Restore code** -- Revert files, keep conversation
 4. **Summarize from here** -- Compress conversation into a summary
-5. **Never mind** -- Cancel
+5. **Summarize up to here** -- Compress everything before this point into a summary
+6. **Never mind** -- Cancel
 
 ### Use Cases
 
@@ -1270,9 +1248,11 @@ When you select a checkpoint, you choose from five options:
 
 ### Configuration
 
+Checkpointing is on by default; `fileCheckpointingEnabled` controls it:
+
 ```json
 {
-  "autoCheckpoint": true
+  "fileCheckpointingEnabled": true
 }
 ```
 
@@ -1303,12 +1283,11 @@ Deep reasoning for complex problems.
 
 **Activation:**
 - Toggle with `Alt+T` (or `Option+T` on macOS) during a session
-- Set `MAX_THINKING_TOKENS` environment variable for programmatic control
+- Opus 4.7+, Sonnet 5+, Haiku 5.5 and Fable always use adaptive reasoning, so a fixed `MAX_THINKING_TOKENS` budget does not apply; control depth with `/effort`
 
 ```bash
-# Enable extended thinking via environment variable
-export MAX_THINKING_TOKENS=50000
-claude -p "Should we use microservices or monolith?"
+# Control reasoning depth with the effort level
+/effort high
 ```
 
 **Benefits:**
@@ -1339,7 +1318,7 @@ Control what Claude can do.
 | **manual** | Standard permissions with prompts for sensitive actions (shown as Manual since v2.1.200; config value is still `default`, which hooks and the SDK report) | General development |
 | **acceptEdits** | Automatically accept file edits without confirmation | Trusted editing workflows |
 | **plan** | Analysis and planning only, no file modifications | Code review, architecture planning |
-| **auto** | Automatically approve safe actions, prompt only for risky ones | Balanced autonomy with safety |
+| **auto** | A classifier approves safe actions and blocks risky ones; prompts return only after 3 blocks in a row or 20 in total | Balanced autonomy with safety |
 | **dontAsk** | Auto-deny anything that would prompt; only pre-approved tools and reads run | Locked-down CI and scripts |
 | **bypassPermissions** | Full unrestricted access, no safety checks | CI/CD pipelines, trusted scripts |
 
@@ -1409,13 +1388,7 @@ claude -r "Feature"    # Resume session by name/ID
 - `↑ / ↓` - Command history
 - `Ctrl + L` - Clear screen
 
-**Multi-line Input:**
-```bash
-User: \
-> Long complex prompt
-> spanning multiple lines
-> \end
-```
+**Multi-line Input:** press `\` + Enter, Option+Enter (macOS), Shift+Enter, or Ctrl+J to start a new line. There is no `\end` terminator.
 
 ### Configuration
 
@@ -1423,14 +1396,8 @@ Complete configuration example:
 
 ```json
 {
-  "planning": {
-    "autoEnter": true,
-    "requireApproval": true
-  },
-  "extendedThinking": {
-    "enabled": true,
-    "showThinkingProcess": true
-  },
+  "alwaysThinkingEnabled": true,
+  "showThinkingSummaries": true,
   "permissions": {
     "defaultMode": "manual"
   }
@@ -1473,9 +1440,17 @@ Claude Code supports the following models with adaptive reasoning effort:
 - [Anthropic Cookbook](https://github.com/anthropics/anthropic-cookbook)
 
 ---
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
+- https://code.claude.com/docs/en/plugins/manifest-reference
+- https://code.claude.com/docs/en/plugins/create
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/interactive-mode
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/memory
+- https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/tools-reference#task-tool-availability
 - https://www.anthropic.com/news/claude-sonnet-5
 - https://code.claude.com/docs/en/cli-reference

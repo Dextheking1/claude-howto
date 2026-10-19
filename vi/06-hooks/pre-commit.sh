@@ -8,6 +8,13 @@
 # Bất kỳ giá trị khác 0 nào khác đều là lỗi KHÔNG chặn — commit vẫn tiếp tục.
 # Nguồn: https://code.claude.com/docs/en/hooks
 
+# Đọc JSON của hook từ stdin; chỉ chạy test với lệnh git commit
+INPUT=$(cat)
+COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
+if ! echo "$COMMAND" | grep -q 'git commit'; then
+  exit 0
+fi
+
 echo "🧪 Running tests before commit..."
 
 # Check if package.json exists (Node.js project)

@@ -271,7 +271,7 @@ pr-review/
 
 **Команди**: `/review-pr`, `/check-security`, `/check-tests`
 
-**Встановлення**: `/plugin install pr-review`
+**Встановлення**: `claude --plugin-dir ./07-plugins/pr-review` (з кореня репозиторію)
 
 ---
 
@@ -306,7 +306,7 @@ devops-automation/
 
 **Команди**: `/deploy`, `/rollback`, `/status`, `/incident`
 
-**Встановлення**: `/plugin install devops-automation`
+**Встановлення**: `claude --plugin-dir ./07-plugins/devops-automation` (з кореня репозиторію)
 
 ---
 
@@ -338,7 +338,7 @@ documentation/
 
 **Команди**: `/generate-api-docs`, `/generate-readme`, `/sync-docs`, `/validate-docs`
 
-**Встановлення**: `/plugin install documentation`
+**Встановлення**: `claude --plugin-dir ./07-plugins/documentation` (з кореня репозиторію)
 
 **Додатково**: `README.md` — огляд плагінів та керівництво
 
@@ -366,7 +366,7 @@ documentation/
 # Для відкату натисніть Esc двічі або скористайтеся:
 /rewind
 # Потім оберіть: Відновити код і розмову, Відновити розмову,
-# Відновити код, Підсумувати звідси, або Скасувати
+# Відновити код, Підсумувати звідси, Підсумувати до цього місця, або Скасувати
 ```
 
 **Сценарії**:
@@ -422,7 +422,7 @@ documentation/
 - **plan**: Лише аналіз, без змін (тільки читання)
 - **auto**: Виконує все з фоновими перевірками безпеки — класифікатор перевіряє команди та запис у захищені каталоги (налаштовується через об'єкт `autoMode` у налаштуваннях)
 - **dontAsk**: Лише попередньо затверджені інструменти — автоматично відхиляє кожен виклик, який інакше вимагав би запиту. Claude виконує лише збіги з `permissions.allow`, Bash-команди лише для читання та виклики, схвалені хуком `PreToolUse`
-- **bypassPermissions**: Приймати все (потребує `--dangerously-skip-permissions`)
+- **bypassPermissions**: Приймати все (вмикається через `--permission-mode bypassPermissions` або еквівалентний `--dangerously-skip-permissions`)
 
 ### Headless-режим (`claude -p`)
 
@@ -705,14 +705,14 @@ cp 04-subagents/code-reviewer.md .claude/agents/
 cp -r 03-skills/code-review-specialist ~/.claude/skills/
 
 # Або встановити повний плагін
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 ```
 
 ### DevOps та розгортання
 
 ```bash
 # Встановити плагін (включає все)
-/plugin install devops-automation
+claude --plugin-dir ./07-plugins/devops-automation
 ```
 
 ### Документація
@@ -728,7 +728,7 @@ cp 04-subagents/documentation-writer.md .claude/agents/
 cp -r 03-skills/doc-generator ~/.claude/skills/
 
 # Або встановити повний плагін
-/plugin install documentation
+claude --plugin-dir ./07-plugins/documentation
 ```
 
 ### Командні стандарти
@@ -932,8 +932,8 @@ Run tests in background
 
 ---
 
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Прикладів**: 100+ файлів
 **Категорій**: 10 функцій
 **Хуків**: 8 скриптів автоматизації
@@ -945,3 +945,6 @@ Run tests in background
 - https://code.claude.com/docs/en/cli-reference
 - https://code.claude.com/docs/en/remote-control
 - https://code.claude.com/docs/en/chrome
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/permission-modes

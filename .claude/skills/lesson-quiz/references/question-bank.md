@@ -103,7 +103,7 @@
 - **Question**: How do you quickly add a new rule to memory during a conversation?
 - **Options**: A) Use the `/memory` slash command or ask conversationally | B) Prefix your message with `#` (e.g., `# always use TypeScript`) | C) Type `/rule "rule text"` | D) Use `@add-memory "rule text"`
 - **Correct**: A
-- **Explanation**: The recommended ways to add memory are the `/memory` command (opens memory files in your editor) or asking Claude conversationally (e.g., "remember that we always use TypeScript strict mode"). The `#` prefix was discontinued and no longer works.
+- **Explanation**: Use `/memory` to open your CLAUDE.md and auto memory files in your editor, or ask Claude conversationally. Asking Claude to "remember" something (e.g., "remember that we always use TypeScript strict mode") saves it to auto memory; to put it in CLAUDE.md instead, say "add this to CLAUDE.md". The `#` prefix was discontinued and no longer works.
 - **Review**: Quick memory updates section in README
 
 ### Q3
@@ -303,7 +303,7 @@
 - **Question**: How do you force a subagent to always run in the background (never inline)?
 - **Options**: A) Set `background: true` in the agent config | B) Use `async: true` in the agent config | C) Press Ctrl+D after starting it | D) Use `--background` CLI flag
 - **Correct**: A
-- **Explanation**: `background: true` in the agent configuration makes the subagent always run as a background task and prevents it from running inline. Subagents already run in the background by default since v2.1.198; this field removes the inline option. Users can also use Ctrl+B to send a foreground task to background.
+- **Explanation**: `background: true` in the agent configuration makes the subagent always run as a background task and prevents it from running inline. Subagents Claude spawns from the main conversation already run in the background by default (v2.1.198; always, in the desktop app and VS Code, since v2.1.302), but a subagent's own nested Agent calls run in the foreground by default in `claude -p`, the Agent SDK, the desktop app and VS Code. Users can also press Ctrl+B to send a running foreground task to the background.
 - **Review**: Background subagents section
 
 ### Q7
@@ -327,7 +327,7 @@
 - **Question**: What are the valid `permissionMode` values for a subagent?
 - **Options**: A) read, write, admin | B) manual, acceptEdits, bypassPermissions, plan, dontAsk, auto | C) safe, normal, dangerous | D) restricted, standard, elevated
 - **Correct**: B
-- **Explanation**: Subagents support six permission modes: manual (prompts for everything — shown as Manual; its config value is `default`, and manual is accepted as an alias since v2.1.200), acceptEdits (auto-accepts file edits), bypassPermissions (skips all), plan (read-only), dontAsk (auto-denies unless pre-approved), auto (background classifier decides).
+- **Explanation**: Subagents support six permission modes: manual (runs reads without asking and prompts for everything else — shown as Manual; its config value is `default`, and manual is accepted as an alias since v2.1.200), acceptEdits (auto-accepts file edits), bypassPermissions (skips all), plan (read-only), dontAsk (auto-denies unless pre-approved), auto (background classifier decides).
 - **Review**: Configuration fields section
 
 ### Q10
@@ -353,9 +353,9 @@
 ### Q2
 - **Category**: practical
 - **Question**: How do you add a GitHub MCP server via CLI?
-- **Options**: A) `claude mcp install github` | B) `claude mcp add --transport http github https://api.github.com/mcp` | C) `claude plugin add github-mcp` | D) `claude connect github`
+- **Options**: A) `claude mcp install github` | B) `claude mcp add --transport http github https://api.githubcopilot.com/mcp/` | C) `claude plugin add github-mcp` | D) `claude connect github`
 - **Correct**: B
-- **Explanation**: Use `claude mcp add` with `--transport` flag, a name, and the server URL. For stdio: `claude mcp add github -- npx -y @modelcontextprotocol/server-github`.
+- **Explanation**: Use `claude mcp add` with the `--transport` flag, a name, and the server URL. GitHub's remote server also needs an auth header: `claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"`.
 - **Review**: MCP configuration management section
 
 ### Q3
@@ -501,7 +501,7 @@
 ### Q10
 - **Category**: practical
 - **Question**: You want to debug why a hook isn't firing. What's the best approach?
-- **Options**: A) Add print statements to the hook script | B) Use `--debug` flag and `Ctrl+O` for verbose mode | C) Check the system log | D) Hooks don't have debugging tools
+- **Options**: A) Add print statements to the hook script | B) Use the `--debug` flag and `Ctrl+O` to open the transcript viewer | C) Check the system log | D) Hooks don't have debugging tools
 - **Correct**: B
 - **Explanation**: `claude --debug` (or `--debug-file <path>`, or `/debug` mid-session) logs hook runs to the debug log, including which hooks fire, their inputs, and outputs; `Ctrl+O` opens the transcript view to see hook outcomes.
 - **Review**: Debugging section
@@ -520,10 +520,10 @@
 
 ### Q2
 - **Category**: practical
-- **Question**: How do you test a plugin locally before publishing?
+- **Question**: How do you load a plugin from a local directory so you can try it in a session before publishing?
 - **Options**: A) Use `/plugin test ./my-plugin` | B) Use `claude --plugin-dir ./my-plugin` | C) Use `claude plugin validate ./my-plugin` | D) Copy it to ~/.claude/plugins/
 - **Correct**: B
-- **Explanation**: The `--plugin-dir` flag loads a plugin from a local directory for testing. It's repeatable for loading multiple plugins.
+- **Explanation**: The `--plugin-dir` flag loads a plugin from a local directory for testing. It's repeatable for loading multiple plugins. `claude plugin validate ./my-plugin` checks the manifest and components but doesn't load the plugin into a session.
 - **Review**: Testing section
 
 ### Q3
@@ -683,7 +683,7 @@
 - **Question**: What are the six permission modes in Claude Code?
 - **Options**: A) read, write, execute, admin, root, sudo | B) manual, acceptEdits, plan, auto, dontAsk, bypassPermissions | C) safe, normal, elevated, admin, unrestricted, god | D) view, edit, run, deploy, full, bypass
 - **Correct**: B
-- **Explanation**: The six modes are: manual (prompts for everything — shown as Manual; its config value is `default`, and manual is accepted as an alias since v2.1.200), acceptEdits (auto-accepts file edits), plan (read-only analysis), auto (background classifier decides), dontAsk (auto-denies unless pre-approved), bypassPermissions (skips all checks).
+- **Explanation**: The six modes are: manual (runs reads without asking and prompts for everything else — shown as Manual; its config value is `default`, and manual is accepted as an alias since v2.1.200), acceptEdits (auto-accepts file edits), plan (read-only analysis), auto (background classifier decides), dontAsk (auto-denies unless pre-approved), bypassPermissions (skips all checks).
 - **Review**: Permission Modes section
 
 ### Q2
@@ -844,8 +844,8 @@
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/skills
@@ -866,3 +866,6 @@
 - https://code.claude.com/docs/en/mcp#configure-tool-search
 - https://code.claude.com/docs/en/skills#frontmatter-reference
 - https://code.claude.com/docs/en/checkpointing#automatic-tracking
+- https://code.claude.com/docs/en/mcp#example-connect-to-github-for-code-reviews
+- https://code.claude.com/docs/en/changelog#2-1-302
+- https://code.claude.com/docs/en/interactive-mode

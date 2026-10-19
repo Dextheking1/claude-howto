@@ -4,11 +4,11 @@
       "type": "stdio",
       "command": "npx",
       "args": [
-        "@modelcontextprotocol/server-database"
-      ],
-      "env": {
-        "DATABASE_URL": "${DATABASE_URL}"
-      }
+        "-y",
+        "@bytebase/dbhub",
+        "--dsn",
+        "postgresql://readonly:pass@prod.db.com:5432/analytics"
+      ]
     }
   }
 }

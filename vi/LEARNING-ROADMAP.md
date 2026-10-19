@@ -92,7 +92,7 @@ graph TD
 
 | Bước | Tính Năng | Độ Phức Tạp | Thời Gian | Cấp Độ | Dependencies | Tại Sao Học Cái Này | Lợi Ích Chính |
 |------|---------|-----------|----------|-------|--------------|------------------|--------------|
-| **1** | [Lệnh Slash](01-slash-commands/) | ⭐ Người mới | 30 phút | Level 1 | None | Gains năng suất nhanh (55+ built-in + 10 bundled skills) | Tự động hóa tức thì, tiêu chuẩn team |
+| **1** | [Lệnh Slash](01-slash-commands/) | ⭐ Người mới | 30 phút | Level 1 | None | Gains năng suất nhanh (55+ built-in + 20 bundled skills) | Tự động hóa tức thì, tiêu chuẩn team |
 | **2** | [Bộ Nhớ](02-memory/) | ⭐⭐ Người mới+ | 45 phút | Level 1 | None | Thiết yếu cho tất cả tính năng | Ngữ cảnh lưu trữ, sở thích |
 | **3** | [Checkpoints](08-checkpoints/) | ⭐⭐ Trung cấp | 45 phút | Level 1 | Quản lý session | Khám phá an toàn | Thử nghiệm, phục hồi |
 | **4** | [CLI Cơ Bản](10-cli/) | ⭐⭐ Người mới+ | 30 phút | Level 1 | None | Sử dụng CLI cốt | Mode tương tác & print |
@@ -297,8 +297,7 @@ chmod +x ~/.claude/hooks/pre-tool-check.sh
 
 ```bash
 # Exercise 1: Thiết lập GitHub MCP
-export GITHUB_TOKEN="your_github_token"
-claude mcp add github -- npx -y @modelcontextprotocol/server-github
+claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer YOUR_GITHUB_PAT"
 
 # Exercise 2: Test tích hợp MCP
 # Trong Claude Code: /mcp__github__list_prs
@@ -365,7 +364,7 @@ Trước khi bắt đầu Level 3, đảm bảo bạn thoải mái với các kh
 ✅ Quản lý background tasks
 ✅ Auto Memory cho các sở thích đã học
 ✅ Auto Mode với bộ phân loại an toàn nền
-✅ Channels cho workflows đa session có cấu trúc
+✅ Channels đẩy sự kiện (kết quả CI, tin nhắn chat, webhooks) vào session đang chạy
 ✅ Voice Dictation để tương tác không cần tay
 ✅ Remote control, desktop app, và web sessions
 ✅ Agent Teams cho cộng tác multi-agent
@@ -401,10 +400,10 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 # Exercise 7: Tasks định kỳ
 /loop 5m /check-status
-# Hoặc sử dụng CronCreate cho scheduled tasks tồn tại
+# Tasks chỉ tồn tại trong session; để lên lịch lâu dài hãy dùng Routines hoặc Desktop scheduled tasks
 
-# Exercise 8: Channels cho workflows đa session
-# Sử dụng channels để tổ chức công việc qua sessions
+# Exercise 8: Channels (research preview)
+# Channel là một MCP server đẩy sự kiện vào session đang chạy của bạn
 
 # Exercise 9: Voice Dictation
 # Sử dụng input giọng nói để tương tác không cần tay với Claude Code
@@ -416,7 +415,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 - [ ] Đã toggle extended thinking với Alt+T / Option+T
 - [ ] Đã sử dụng auto mode với background safety classifier
 - [ ] Đã sử dụng background tasks cho operations dài
-- [ ] Đã khám phá Channels cho workflows đa session
+- [ ] Đã khám phá Channels đẩy sự kiện bên ngoài vào session
 - [ ] Đã thử Voice Dictation cho input không cần tay
 - [ ] Hiểu Remote Control, Desktop App, và Web sessions
 - [ ] Đã bật và sử dụng Agent Teams cho các tasks cộng tác
@@ -447,7 +446,7 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 
 ```bash
 # Exercise 1: Cài đặt một plugin hoàn chỉnh
-# Trong Claude Code: /plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review  # từ thư mục gốc của repo
 
 # Exercise 2: Print mode cho CI/CD
 claude -p "Chạy tất cả tests và tạo báo cáo"
@@ -693,13 +692,13 @@ Khi bạn đã hoàn thành tất cả milestones:
 
 1. **Tạo tài liệu team** - Tài liệu hóa thiết lập Claude Code của team
 2. **Xây dựng custom plugins** - Đóng gói workflows của team
-3. **Khám Phá Remote Control** - Điều khiển sessions Claude Code theo chương trình từ các công cụ bên ngoài
+3. **Khám Phá Remote Control** - Tiếp tục một session Claude Code cục bộ từ điện thoại, trình duyệt hoặc ứng dụng Claude
 4. **Thử Web Sessions** - Sử dụng Claude Code qua interfaces dựa trên trình duyệt để phát triển từ xa
 5. **Sử dụng Desktop App** - Truy cập các tính năng Claude Code qua ứng dụng desktop native
 6. **Sử Dụng Auto Mode** - Để Claude làm việc tự động với bộ phân loại an toàn nền
 7. **Tận Dụng Auto Memory** - Để Claude học các sở thích của bạn tự động theo thời gian
 8. **Thiết Lập Agent Teams** - Phối hợp nhiều agents trên các tasks phức tạp, đa diện
-9. **Sử Dụng Channels** - Tổ chức công việc qua workflows đa session có cấu trúc
+9. **Sử Dụng Channels** - Kết nối một MCP server đẩy sự kiện (kết quả CI, tin nhắn chat, webhooks) vào session đang chạy
 10. **Thử Voice Dictation** - Sử dụng input giọng nói không cần tay để tương tác với Claude Code
 11. **Sử Dụng Scheduled Tasks** - Tự động hóa các kiểm tra định kỳ với `/loop` và cron tools
 12. **Đóng góp ví dụ** - Chia sẻ với cộng đồng
@@ -733,11 +732,17 @@ Khi bạn đã hoàn thành tất cả milestones:
 
 ---
 
-**Cập Nhật Lần Cuối**: Ngày 15 tháng 10 năm 2026
-**Phiên Bản Claude Code**: 2.1.300
+**Cập Nhật Lần Cuối**: Ngày 18 tháng 10 năm 2026
+**Phiên Bản Claude Code**: 2.1.302
 **Nguồn**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/agent-teams
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/channels
+- https://code.claude.com/docs/en/remote-control
+- https://code.claude.com/docs/en/scheduled-tasks
+- https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/sub-agents
 **Được Duy Trì Bởi**: Những người đóng góp Claude How-To
 **Giấy Phép**: Mục đích giáo dục, miễn phí sử dụng và điều chỉnh

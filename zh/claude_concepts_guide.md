@@ -487,7 +487,7 @@ graph TB
 
 ### Claude Code 中的 7 层记忆层级
 
-Claude Code 会按优先级从高到低加载 7 层记忆：
+Claude Code 会加载 7 层记忆。CLAUDE.md 文件不会互相覆盖，而是拼接进上下文，并按 managed → user → project → local 的顺序加载（越具体的文件越晚读取）：
 
 ```mermaid
 graph TD
@@ -509,7 +509,7 @@ graph TD
 | 4. User | `~/.claude/CLAUDE.md` | 个人级 | 中 | 个人 | 个人偏好 |
 | 5. User Rules | `~/.claude/rules/*.md` | 个人级 | 中 | 个人 | 个人规则模块 |
 | 6. Local | `./CLAUDE.local.md` | 本地 | 低 | 不共享 | 机器相关设置 |
-| 7. Auto Memory | 自动生成 | 会话级 | 最低 | 个人 | 学到的偏好与模式 |
+| 7. Auto Memory | 自动生成 | 仓库级 | 最低 | 个人 | 学到的偏好与模式 |
 
 ### Auto Memory
 
@@ -862,15 +862,15 @@ sequenceDiagram
 
 ### 预构建 Skills
 
-Claude Code 现在内置了 5 个 bundled skills，可直接使用：
+Claude Code 现在内置了 20 个 bundled skills，可直接使用：
 
 | Skill | 命令 | 用途 |
 |-------|------|------|
 | Simplify | `/simplify` | 简化复杂代码或解释 |
 | Batch | `/batch` | 批量对多个文件或对象执行操作 |
-| Debug | `/debug` | 系统化调试并做根因分析 |
+| Debug | `/debug` | 为当前会话开启调试日志，并通过读取该日志排查问题 |
 | Loop | `/loop` | 按定时计划重复执行任务 |
-| Claude API | `/claude-api` | 直接与 Anthropic API 交互 |
+| Claude API | `/claude-api` | 按项目语言加载 Claude API 和 Managed Agents 参考资料；代码导入 `anthropic` 或 `@anthropic-ai/sdk` 时自动启用 |
 
 ### 实践示例
 
@@ -1003,7 +1003,7 @@ sequenceDiagram
     participant MCPServers as MCP Servers
     participant Hooks
 
-    User->>Claude: /plugin install pr-review
+    User->>Claude: claude --plugin-dir ./07-plugins/pr-review
     Claude->>Plugin: 下载插件清单
     Plugin-->>Claude: 返回插件定义
     Claude->>Install: 解包组件
@@ -1024,14 +1024,14 @@ sequenceDiagram
 
 ### Plugin 定义结构
 
-```yaml
----
-name: plugin-name
-version: "1.0.0"
-description: "What this plugin does"
-author: "Your Name"
-license: MIT
----
+清单是位于 `.claude-plugin/plugin.json` 的 JSON 文件。只有 `name` 是必填项，无法识别的顶层键会被移除：
+
+```json
+{
+  "name": "plugin-name",
+  "version": "1.0.0",
+  "description": "What this plugin does"
+}
 ```
 
 ### Plugin 结构
@@ -1045,6 +1045,7 @@ my-plugin/
 ├── skills/
 ├── hooks/
 ├── .mcp.json
+├── bin/
 ├── templates/
 ├── scripts/
 ├── docs/
@@ -1142,7 +1143,7 @@ graph LR
 
 **使用 Plugin：**
 ```bash
-/plugin install pr-review
+claude --plugin-dir ./07-plugins/pr-review
 # ✅ 一次安装完成
 # ✅ 即刻可用
 # ✅ 团队可复现
@@ -1387,12 +1388,13 @@ Esc + Esc
 /rewind
 ```
 
-选择 checkpoint 后有五个选项：
+选择 checkpoint 后有六个选项：
 1. 恢复代码和对话
 2. 恢复对话
 3. 恢复代码
 4. 从这里开始总结
-5. 取消
+5. 总结到这里为止
+6. 取消
 
 ### 常见场景
 
@@ -1405,9 +1407,11 @@ Esc + Esc
 
 ### 配置
 
+Checkpoint 默认开启，由 `fileCheckpointingEnabled` 控制：
+
 ```json
 {
-  "autoCheckpoint": true
+  "fileCheckpointingEnabled": true
 }
 ```
 
@@ -1435,9 +1439,11 @@ Esc + Esc
 
 适合复杂问题的深度推理。
 
+Opus 4.7+、Sonnet 5+、Haiku 5.5 和 Fable 始终使用自适应推理，固定的 `MAX_THINKING_TOKENS` 预算对它们不适用；用 `/effort` 控制推理深度。
+
 ```bash
-export MAX_THINKING_TOKENS=50000
-claude -p "Should we use microservices or monolith?"
+# 用 effort 级别控制推理深度
+/effort high
 ```
 
 ### Background Tasks
@@ -1504,10 +1510,6 @@ claude -r "Feature"
 
 ```json
 {
-  "planning": {
-    "autoEnter": true,
-    "requireApproval": true
-  },
   "permissions": {
     "defaultMode": "manual"
   }
@@ -1532,9 +1534,15 @@ claude -r "Feature"
 *适用于 Claude Fable 5、Claude Opus 5、Claude Sonnet 5、Claude Sonnet 4.6、Claude Opus 4.8、Claude Haiku 4.5*
 *现已覆盖：Hooks、Checkpoints、Planning Mode、Extended Thinking、Background Tasks、Permission Modes、Headless Mode、Session Management、Auto Memory、Agent Teams、Scheduled Tasks、Chrome Integration、Bundled Skills 等概念。*
 
-**最后更新**：2026 年 10 月 15 日
-**Claude Code 版本**：2.1.300
+**最后更新**：2026 年 10 月 18 日
+**Claude Code 版本**：2.1.302
 **来源**：
+- https://code.claude.com/docs/en/plugins/manifest-reference
+- https://code.claude.com/docs/en/plugins/install
+- https://code.claude.com/docs/en/settings-reference
+- https://code.claude.com/docs/en/model-config
+- https://code.claude.com/docs/en/checkpointing
+- https://code.claude.com/docs/en/memory
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/sub-agents
 - https://code.claude.com/docs/en/commands

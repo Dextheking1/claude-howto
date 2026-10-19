@@ -9,12 +9,12 @@ Use these specific recommendations when a topic is a gap. Paths are relative to 
 - Done when: You can create a custom skill with arguments and dynamic context
 
 **Slash Commands (score 1 — review)**:
-- Focus on: Dynamic context with `!`backtick`` syntax, `@file` references, `disable-model-invocation` vs `user-invocable` control
+- Focus on: Dynamic context with the ``!`command` `` syntax, `@file` references, `disable-model-invocation` vs `user-invocable` control
 - Done when: You can create a skill that injects live command output and controls its own invocation behavior
 
 **Memory (score 0)**:
 - Tutorial: [02-memory/](../../../../02-memory/)
-- Focus on: CLAUDE.md creation, `/init` and `/memory` commands, asking Claude to remember something (the old `#` shortcut was removed)
+- Focus on: CLAUDE.md creation, `/init` and `/memory` commands, and the difference from auto memory (asking Claude to remember something saves it to auto memory; to put it in CLAUDE.md, say "add this to CLAUDE.md" or edit via `/memory` — the old `#` shortcut was removed)
 - Key exercise: Create a project CLAUDE.md with your coding standards
 - Done when: Claude remembers your preferences across sessions
 
@@ -59,18 +59,18 @@ Use these specific recommendations when a topic is a gap. Paths are relative to 
 - Done when: Claude delegates code review to your custom agent
 
 **Subagents (score 1 — review)**:
-- Focus on: Worktree isolation (`isolation: worktree`), persistent agent memory (`memory` field with scopes), background agents (Ctrl+B to background; Ctrl+X Ctrl+K twice to stop them all), agent allowlists with `Agent(agent_type)` (`Task(...)` remains a back-compat alias), agent teams (`--teammate-mode`)
+- Focus on: Worktree isolation (`isolation: worktree`), persistent agent memory (`memory` field with scopes), background agents (Ctrl+B to background; Ctrl+X Ctrl+K twice to stop them all), agent allowlists with `Agent(agent_type)` for a main-thread agent started with `claude --agent` (`Task(...)` remains a back-compat alias; in a subagent's own `tools` the type list is ignored), agent teams (`--teammate-mode`)
 - Done when: You have a subagent with persistent memory running in worktree isolation
 
 **Checkpoints (score 0)**:
 - Tutorial: [08-checkpoints/](../../../../08-checkpoints/)
-- Focus on: Esc+Esc and /rewind access, 6 rewind options (restore code and conversation, restore conversation, restore code, summarize from here, summarize up to here, never mind), limitations — bash filesystem ops, subagent edits (except a foreground `context: fork` skill), edits made outside Claude Code, and symlinked/hardlinked paths are all untracked
+- Focus on: Esc+Esc and /rewind access, 6 rewind options (restore code and conversation, restore conversation, restore code, summarize from here, summarize up to here, never mind), limitations — bash filesystem ops, subagent edits (except a foreground `context: fork` skill), edits made outside Claude Code are untracked, and symlinked/hard-linked paths are skipped on restore
 - Key exercise: Make experimental changes, then rewind to restore
 - Done when: You can confidently experiment knowing you can rewind
 
 **Advanced Features (score 0)**:
 - Tutorial: [09-advanced-features/](../../../../09-advanced-features/)
-- Focus on: Planning mode (/plan or Shift+Tab), permission modes (6 types: manual — renamed from default in v2.1.200 — acceptEdits, plan, auto, dontAsk, bypassPermissions), extended thinking (Alt+T/Option+T toggle — no effect on Opus 5.5 (the default model), Sonnet 5.5, Haiku 5.5, or the Fable models, where thinking stays on)
+- Focus on: Planning mode (/plan or Shift+Tab), permission modes (6 types: manual — config value `default`, shown as Manual since v2.1.200 — acceptEdits, plan, auto, dontAsk, bypassPermissions), extended thinking (Alt+T/Option+T toggle — no effect on Opus 5.5 (the default model), Sonnet 5.5, Haiku 5.5, or the Fable models, where thinking stays on)
 - Key exercise: Use planning mode to design a feature, then implement it
 - Done when: You can switch between planning and implementation modes fluently
 
@@ -100,8 +100,8 @@ Use these specific recommendations when a topic is a gap. Paths are relative to 
 
 ---
 
-**Last Updated**: October 15, 2026
-**Claude Code Version**: 2.1.300
+**Last Updated**: October 18, 2026
+**Claude Code Version**: 2.1.302
 **Sources**:
 - https://code.claude.com/docs/en/hooks
 - https://code.claude.com/docs/en/memory

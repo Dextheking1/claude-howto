@@ -46,7 +46,7 @@
 | `/export [filename]` | Експортувати розмову у файл або буфер |
 | `/extra-usage` | Налаштування додаткового використання для лімітів |
 | `/fast [on\|off]` | Перемкнути швидкий режим |
-| `/feedback` | Надіслати відгук (аліас: `/bug`) |
+| `/feedback` | Надіслати відгук |
 | `/help` | Показати довідку |
 | `/hooks` | Переглянути конфігурації хуків |
 | `/ide` | Управління IDE-інтеграціями |
@@ -100,7 +100,7 @@
 | `/batch <instruction>` | Оркестрація масштабних паралельних змін через worktrees |
 | `/claude-api` | Завантажити довідник Claude API для мови проекту |
 | `/debug [description]` | Увімкнути налагоджувальне логування |
-| `/loop [interval] <prompt>` | Запускати промпт повторно за інтервалом |
+| `/loop [interval] [prompt]` | Запускати промпт повторно за інтервалом |
 | `/simplify [focus]` | Перевірити змінені файли на якість коду |
 
 ### Застарілі команди
@@ -196,7 +196,7 @@ description: Що робить ця команда і коли її викори
 | Поле | Призначення | За замовчуванням |
 |------|------------|-----------------|
 | `name` | Ім'я команди (стає `/name`) | Ім'я каталогу |
-| `description` | Короткий опис (допомагає Claude знати коли використовувати) | Перший абзац |
+| `description` | Короткий опис (допомагає Claude знати коли використовувати) | Перший непорожній рядок |
 | `argument-hint` | Очікувані аргументи для автодоповнення | Немає |
 | `allowed-tools` | Інструменти без запиту дозволу | Успадковується |
 | `model` | Конкретна модель для використання | Успадковується |
@@ -580,8 +580,8 @@ Deploy the application to production:
 
 ---
 
-**Останнє оновлення**: 15 жовтня 2026
-**Версія Claude Code**: 2.1.300
+**Останнє оновлення**: 18 жовтня 2026
+**Версія Claude Code**: 2.1.302
 **Джерела**:
 - https://code.claude.com/docs/en/commands
 - https://code.claude.com/docs/en/output-styles
@@ -590,6 +590,7 @@ Deploy the application to production:
 - https://code.claude.com/docs/en/permissions#mcp
 - https://code.claude.com/docs/en/changelog#2-1-299
 - https://code.claude.com/docs/en/hooks#hook-lifecycle
+- https://code.claude.com/docs/en/skills
 **Сумісні моделі**: Claude Fable 5, Claude Opus 5, Claude Sonnet 5, Claude Sonnet 4.6, Claude Opus 4.8, Claude Haiku 4.5
 
 *Частина серії посібників [Claude How To](../)*
